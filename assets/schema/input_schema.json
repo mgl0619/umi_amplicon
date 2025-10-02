@@ -1,0 +1,71 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "https://raw.githubusercontent.com/nf-core/umi-amplicon/master/nextflow_schema.json",
+    "title": "nf-core/umi-amplicon pipeline parameters",
+    "description": "UMI-tagged amplicon sequencing analysis pipeline",
+    "type": "object",
+    "properties": {
+        "input": {
+            "type": "string",
+            "format": "file-path",
+            "description": "Path to input samplesheet"
+        },
+        "outdir": {
+            "type": "string",
+            "format": "directory-path",
+            "description": "The output directory where the results will be saved"
+        },
+        "umitools_path": {
+            "type": "string",
+            "default": "umitools",
+            "description": "Path to UMI-tools installation"
+        },
+        "umi_length": {
+            "type": "integer",
+            "default": 12,
+            "description": "Length of UMI sequences"
+        },
+        "umi_pattern": {
+            "type": "string",
+            "default": "NNNNNNNNNNNN",
+            "description": "Pattern for UMI extraction"
+        },
+        "umi_method": {
+            "type": "string",
+            "enum": ["directional", "unique"],
+            "default": "directional",
+            "description": "UMI extraction method"
+        },
+        "umi_quality_threshold": {
+            "type": "integer",
+            "default": 10,
+            "description": "Minimum quality score for UMI bases"
+        },
+        "umi_collision_rate_threshold": {
+            "type": "number",
+            "default": 0.1,
+            "description": "Maximum acceptable collision rate"
+        },
+        "umi_diversity_threshold": {
+            "type": "integer",
+            "default": 1000,
+            "description": "Minimum UMI diversity"
+        },
+        "skip_umi_qc": {
+            "type": "boolean",
+            "default": false,
+            "description": "Skip UMI quality control metrics"
+        },
+        "skip_umi_analysis": {
+            "type": "boolean",
+            "default": false,
+            "description": "Skip UMI analysis pipeline"
+        },
+        "skip_report": {
+            "type": "boolean",
+            "default": false,
+            "description": "Skip HTML report generation"
+        }
+    },
+    "required": ["input", "outdir"]
+}

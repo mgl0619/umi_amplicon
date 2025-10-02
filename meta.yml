@@ -1,0 +1,26 @@
+name: umi-amplicon
+description: UMI-tagged amplicon sequencing analysis pipeline
+keywords:
+  - umi
+  - amplicon
+  - sequencing
+  - bioinformatics
+  - nextflow
+  - nf-core
+tools:
+  - name: umi-tools
+    description: Tools for handling Unique Molecular Identifiers
+    homepage: https://github.com/CGATOxford/UMI-tools
+    documentation: https://umi-tools.readthedocs.io/
+    tool_doi: 10.1101/gr.209601.116
+    tool_paper: "Smith, T., Heger, A., & Sudbery, I. (2017). UMI-tools: modeling sequencing errors in Unique Molecular Identifiers to improve quantification accuracy. Genome research, 27(3), 491-499."
+  - name: fastqc
+    description: A quality control tool for high throughput sequence data
+    homepage: https://www.bioinformatics.babraham.ac.uk/projects/fastqc/
+    documentation: https://www.bioinformatics.babraham.ac.uk/projects/fastqc/Help/
+  - name: multiqc
+    description: Aggregate results from bioinformatics analyses across many samples into a single report
+    homepage: https://multiqc.info/
+    documentation: https://multiqc.info/docs/
+    tool_doi: 10.1093/bioinformatics/btw354
+    tool_paper: "Ewels, P., Magnusson, M., Lundin, S., & Käller, M. (2016). MultiQC: summarize analysis results for multiple tools and samples in a single report. Bioinformatics, 32(19), 3047-3048."

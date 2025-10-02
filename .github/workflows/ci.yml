@@ -1,0 +1,96 @@
+name: nf-core CI
+# This workflow runs the pipeline with the minimal test dataset to check that it completes without error
+on:
+  push:
+  pull_request:
+  release:
+    types: [published]
+
+env:
+  NXF_ANSI_LOG: false
+  CAPSULE_LOG: none
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # Nextflow versions
+        include:
+          - NXF_VER: '23.04.0'
+            NXF_EDGE: ''
+          - NXF_VER: '23.10.0'
+            NXF_EDGE: ''
+          - NXF_VER: '24.0.0'
+            NXF_EDGE: ''
+
+    steps:
+      - name: Check out pipeline code
+        uses: actions/checkout@v4
+
+      - name: Install Nextflow
+        run: |
+          wget -qO- https://get.nextflow.io | bash
+          sudo mv nextflow /usr/local/bin/
+
+      - name: Install Docker
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y docker.io
+          sudo systemctl start docker
+          sudo usermod -aG docker $USER
+
+      - name: Pull test data
+        run: |
+          git clone --depth 1 https://github.com/nf-core/test-datasets.git
+
+      - name: Run pipeline with test data
+        run: |
+          nextflow run ${GITHUB_WORKSPACE} -profile test,docker --outdir ./results
+
+      - name: Run pipeline with test_full data
+        run: |
+          nextflow run ${GITHUB_WORKSPACE} -profile test_full,docker --outdir ./results_full
+
+  test_conda:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out pipeline code
+        uses: actions/checkout@v4
+
+      - name: Install Nextflow
+        run: |
+          wget -qO- https://get.nextflow.io | bash
+          sudo mv nextflow /usr/local/bin/
+
+      - name: Install Conda
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          auto-update-conda: true
+          channels: conda-forge,bioconda,defaults
+          channel-priority: strict
+
+      - name: Run pipeline with test data
+        run: |
+          nextflow run ${GITHUB_WORKSPACE} -profile test,conda --outdir ./results
+
+  test_singularity:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out pipeline code
+        uses: actions/checkout@v4
+
+      - name: Install Nextflow
+        run: |
+          wget -qO- https://get.nextflow.io | bash
+          sudo mv nextflow /usr/local/bin/
+
+      - name: Install Singularity
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y singularity-container
+          sudo singularity config global --bind /tmp
+
+      - name: Run pipeline with test data
+        run: |
+          nextflow run ${GITHUB_WORKSPACE} -profile test,singularity --outdir ./results
