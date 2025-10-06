@@ -1,4 +1,4 @@
-name: nf-core CI
+name: umi-amplicon CI
 # This workflow runs the pipeline with the minimal test dataset to check that it completes without error
 on:
   push:
@@ -21,12 +21,18 @@ jobs:
             NXF_EDGE: ''
           - NXF_VER: '23.10.0'
             NXF_EDGE: ''
-          - NXF_VER: '24.0.0'
+          - NXF_VER: '24.04.1'
             NXF_EDGE: ''
 
     steps:
       - name: Check out pipeline code
         uses: actions/checkout@v4
+      
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'  
 
       - name: Install Nextflow
         run: |
@@ -34,12 +40,12 @@ jobs:
           sudo mv nextflow /usr/local/bin/
           nextflow -version
 
-      - name: Install Docker
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y docker.io
-          sudo systemctl start docker
-          sudo usermod -aG docker $USER
+      # - name: Install Docker
+      #   run: |
+      #     sudo apt-get update
+      #     sudo apt-get install -y docker.io
+      #     sudo systemctl start docker
+      #     sudo usermod -aG docker $USER
 
       - name: Run pipeline with test data
         run: |
