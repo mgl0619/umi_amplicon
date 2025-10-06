@@ -1,4 +1,4 @@
-# nf-core/umi-amplicon: Usage
+# umi-amplicon: Usage
 
 ## Table of contents
 
@@ -24,7 +24,7 @@
 The typical command for running the pipeline is as follows:
 
 ```bash
-nextflow run nf-core/umi-amplicon --input samplesheet.csv --outdir <OUTDIR> -profile <docker/singularity/conda/institutional>
+nextflow run umi-amplicon --input samplesheet.csv --outdir <OUTDIR> -profile <docker/singularity/conda/institutional>
 ```
 
 This will launch the pipeline with the `docker` configuration profile. See below for more information about profiles.
@@ -43,7 +43,7 @@ work                # Directory containing the nextflow working files
 When you run the above command, Nextflow automatically pulls the pipeline code from GitHub and stores it as a cached version. When running the pipeline after this, it'll always use the cached version if available - even if the pipeline has been updated since. To make sure that you're running the latest version of the pipeline, make sure that you regularly update the cached version of the pipeline:
 
 ```bash
-nextflow pull nf-core/umi-amplicon
+nextflow pull umi-amplicon
 ```
 
 ## Main arguments
@@ -110,7 +110,7 @@ Minimum UMI diversity (default: 1000).
 
 ### Automatic resubmission
 
-Each step in the pipeline has a default set of requirements for number of CPUs, memory and time. For most of the steps in the pipeline, if a job fails with an error (for example if it runs out of memory), the pipeline will automatically resubmit that job with higher requirements (see the `maxRetries` and `maxErrors` parameters in the [configuration file](https://github.com/nf-core/umi-amplicon/blob/master/nextflow.config)).
+Each step in the pipeline has a default set of requirements for number of CPUs, memory and time. For most of the steps in the pipeline, if a job fails with an error (for example if it runs out of memory), the pipeline will automatically resubmit that job with higher requirements (see the `maxRetries` and `maxErrors` parameters in the [configuration file](https://github.com/umi-amplicon/blob/master/nextflow.config)).
 
 ### Custom resource requests
 
@@ -184,7 +184,7 @@ An [example samplesheet](../assets/samplesheet.csv) has been provided with the p
 The typical command for running the pipeline is as follows:
 
 ```bash
-nextflow run nf-core/umi-amplicon --input samplesheet.csv --outdir <OUTDIR> -profile <docker/singularity/conda/institutional>
+nextflow run umi-amplicon --input samplesheet.csv --outdir <OUTDIR> -profile <docker/singularity/conda/institutional>
 ```
 
 This will launch the pipeline with the `docker` configuration profile. See below for more information about profiles.
@@ -203,7 +203,7 @@ work                # Directory containing the nextflow working files
 When you run the above command, Nextflow automatically pulls the pipeline code from GitHub and stores it as a cached version. When running the pipeline after this, it'll always use the cached version if available - even if the pipeline has been updated since. To make sure that you're running the latest version of the pipeline, make sure that you regularly update the cached version of the pipeline:
 
 ```bash
-nextflow pull nf-core/umi-amplicon
+nextflow pull umi-amplicon
 ```
 
 ## Core Nextflow arguments
@@ -237,7 +237,7 @@ If you are unsure which profile to use, you can start with the `-profile test` t
 Specify this when restarting a pipeline. Nextflow will use cached results from any pipeline steps where the inputs are the same, continuing from where it got to previously. For input to work properly, the intermediate results must also be compatible with the new version of the pipeline.
 
 ```bash
-nextflow run nf-core/umi-amplicon -profile docker --input samplesheet.csv --outdir <OUTDIR> -resume
+nextflow run umi-amplicon -profile docker --input samplesheet.csv --outdir <OUTDIR> -resume
 ```
 
 ### `-c`
@@ -281,7 +281,7 @@ Some HPC setups also allow you to run nextflow within a cluster job submitted yo
 
 It is a good idea to specify a pipeline version when running the pipeline on your data. This ensures that a specific version of the pipeline code and software are used when you run your analysis. If you keep using the same tag, you'll be running the same version of the pipeline, even if there have been changes to the code since.
 
-First, go to the [nf-core/umi-amplicon releases page](https://github.com/nf-core/umi-amplicon/releases) and find the latest version number - numeric only (eg. `1.3.1`). Then specify this when running the pipeline with `-r` (one hyphen) - eg. `-r 1.3.1`.
+First, go to the [umi-amplicon releases page](https://github.com/umi-amplicon/releases) and find the latest version number - numeric only (eg. `1.3.1`). Then specify this when running the pipeline with `-r` (one hyphen) - eg. `-r 1.3.1`.
 
 This version number will be logged in reports when you run the pipeline, so that you'll know what you used when you look back in the future. For example, at the bottom of the MultiQC reports.
 
@@ -320,7 +320,7 @@ If you are unsure which profile to use, you can start with the `-profile test` t
 Specify this when restarting a pipeline. Nextflow will use cached results from any pipeline steps where the inputs are the same, continuing from where it got to previously. For input to work properly, the intermediate results must also be compatible with the new version of the pipeline.
 
 ```bash
-nextflow run nf-core/umi-amplicon -profile docker --input samplesheet.csv --outdir <OUTDIR> -resume
+nextflow run umi-amplicon -profile docker --input samplesheet.csv --outdir <OUTDIR> -resume
 ```
 
 ### `-c`

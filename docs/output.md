@@ -1,4 +1,4 @@
-# nf-core/umi-amplicon: Output
+# umi-amplicon: Output
 
 ## Table of contents
 
@@ -24,7 +24,7 @@ The directories listed below will be created in the results directory after the 
 
 ## Pipeline overview
 
-The nf-core/umi-amplicon pipeline is built using [Nextflow](https://www.nextflow.io)
+The umi-amplicon pipeline is built using [Nextflow](https://www.nextflow.io)
 and processes data using the following steps:
 
 - [UMI QC Metrics](#umi-qc-metrics) - Quality control metrics for UMI sequences

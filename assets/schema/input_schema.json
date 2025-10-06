@@ -1,7 +1,7 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema",
-    "$id": "https://raw.githubusercontent.com/nf-core/umi-amplicon/master/nextflow_schema.json",
-    "title": "nf-core/umi-amplicon pipeline parameters",
+    "$id": "https://raw.githubusercontent.com/umi-amplicon/master/nextflow_schema.json",
+    "title": "umi-amplicon pipeline parameters",
     "description": "UMI-tagged amplicon sequencing analysis pipeline",
     "type": "object",
     "properties": {
@@ -50,6 +50,49 @@
             "type": "integer",
             "default": 1000,
             "description": "Minimum UMI diversity"
+        },
+        "umi_tool": {
+            "type": "string",
+            "enum": ["umitools", "fgbio"],
+            "default": "umitools",
+            "description": "UMI processing tool"
+        },
+        "group_strategy": {
+            "type": "string",
+            "enum": ["paired", "single"],
+            "default": "paired",
+            "description": "Grouping strategy for fgbio"
+        },
+        "consensus_strategy": {
+            "type": "string",
+            "enum": ["paired", "single"],
+            "default": "paired",
+            "description": "Consensus strategy for fgbio"
+        },
+        "min_reads": {
+            "type": "integer",
+            "default": 1,
+            "description": "Minimum reads per UMI group"
+        },
+        "min_fraction": {
+            "type": "number",
+            "default": 0.5,
+            "description": "Minimum fraction for consensus"
+        },
+        "error_rate_pre_umi": {
+            "type": "number",
+            "default": 0.01,
+            "description": "Error rate pre-UMI for fgbio"
+        },
+        "max_edit_distance": {
+            "type": "integer",
+            "default": 1,
+            "description": "Maximum edit distance for filtering"
+        },
+        "min_base_quality": {
+            "type": "integer",
+            "default": 20,
+            "description": "Minimum base quality for filtering"
         },
         "skip_umi_qc": {
             "type": "boolean",

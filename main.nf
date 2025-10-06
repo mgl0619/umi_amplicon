@@ -2,7 +2,7 @@
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    nf-core/umi-amplicon Pipeline
+    umi-amplicon Pipeline
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     UMI-tagged amplicon sequencing analysis pipeline
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -14,11 +14,11 @@ def helpMessage() {
     log.info nfcoreHeader()
     log.info """
     =========================================
-     nf-core/umi-amplicon v${workflow.manifest.version}
+     umi-amplicon v${workflow.manifest.version}
     =========================================
 
     Usage:
-        nextflow run nf-core/umi-amplicon --input samplesheet.csv --outdir <OUTDIR> [options]
+        nextflow run umi-amplicon --input samplesheet.csv --outdir <OUTDIR> [options]
 
     Mandatory arguments:
         --input [file]                        Path to input samplesheet (see format below)
@@ -38,6 +38,14 @@ def helpMessage() {
         --umi_quality_threshold [int]         Minimum quality score for UMI bases (default: 10)
         --umi_collision_rate_threshold [float] Maximum acceptable collision rate (default: 0.1)
         --umi_diversity_threshold [int]        Minimum UMI diversity (default: 1000)
+        --umi_tool [str]                      UMI processing tool: 'umitools' or 'fgbio' (default: 'umitools')
+        --group_strategy [str]                Grouping strategy for fgbio: 'paired' or 'single' (default: 'paired')
+        --consensus_strategy [str]            Consensus strategy for fgbio: 'paired' or 'single' (default: 'paired')
+        --min_reads [int]                     Minimum reads per UMI group (default: 1)
+        --min_fraction [float]                Minimum fraction for consensus (default: 0.5)
+        --error_rate_pre_umi [float]          Error rate pre-UMI for fgbio (default: 0.01)
+        --max_edit_distance [int]             Maximum edit distance for filtering (default: 1)
+        --min_base_quality [int]              Minimum base quality for filtering (default: 20)
         --skip_umi_qc                         Skip UMI quality control metrics
         --skip_umi_analysis                   Skip UMI analysis pipeline
         --skip_report                         Skip HTML report generation
@@ -50,7 +58,7 @@ def helpMessage() {
         SAMPLE2,/path/to/sample2_R1.fastq.gz,/path/to/sample2_R2.fastq.gz,/path/to/sample2_UMI1.fastq.gz,/path/to/sample2_UMI2.fastq.gz
 
     Citation:
-        If you use nf-core/umi-amplicon for your analysis please cite it using the following doi: TBD
+        If you use umi-amplicon for your analysis please cite it using the following doi: TBD
 
     Pipeline documentation:
         https://nf-co.re/umi-amplicon
@@ -79,7 +87,7 @@ def nfcoreHeader() {
     ${c_red}      \\:\\__\\        \\:\\__\\        \\:\\__\\        \\:\\__\\        \\:\\__\\        \\:\\__\\    ${c_reset}
     ${c_red}       \\/__/         \\/__/         \\/__/         \\/__/         \\/__/         \\/__/     ${c_reset}
 
-    ${c_blue}    nf-core/umi-amplicon v${workflow.manifest.version}${c_reset}
+    ${c_blue}    umi-amplicon v${workflow.manifest.version}${c_reset}
     ${c_blue}    UMI-tagged amplicon sequencing analysis pipeline${c_reset}
     """.stripIndent()
 }
@@ -87,7 +95,8 @@ def nfcoreHeader() {
 // Check Nextflow version
 nextflowVersion = "23.04.0"
 if (workflow.nextflow.version) {
-    if (!workflow.nextflow.version.startsWith("23.04") && !workflow.nextflow.version.startsWith("23.10") && !workflow.nextflow.version.startsWith("24.0")) {
+    def versionString = workflow.nextflow.version.toString()
+    if (!versionString.startsWith("23.04") && !versionString.startsWith("23.10") && !versionString.startsWith("24.0")) {
         log.warn "WARNING: This pipeline has been tested with Nextflow versions 23.04.0, 23.10.0 and 24.0.0. You are running version ${workflow.nextflow.version}."
     }
 } else {
@@ -152,6 +161,14 @@ params.umi_method = params.umi_method ?: "directional"
 params.umi_quality_threshold = params.umi_quality_threshold ?: 10
 params.umi_collision_rate_threshold = params.umi_collision_rate_threshold ?: 0.1
 params.umi_diversity_threshold = params.umi_diversity_threshold ?: 1000
+params.umi_tool = params.umi_tool ?: "umitools"
+params.group_strategy = params.group_strategy ?: "paired"
+params.consensus_strategy = params.consensus_strategy ?: "paired"
+params.min_reads = params.min_reads ?: 1
+params.min_fraction = params.min_fraction ?: 0.5
+params.error_rate_pre_umi = params.error_rate_pre_umi ?: 0.01
+params.max_edit_distance = params.max_edit_distance ?: 1
+params.min_base_quality = params.min_base_quality ?: 20
 params.skip_umi_qc = params.skip_umi_qc ?: false
 params.skip_umi_analysis = params.skip_umi_analysis ?: false
 params.skip_report = params.skip_report ?: false
@@ -168,6 +185,14 @@ log.info "  UMI method: ${params.umi_method}"
 log.info "  UMI quality threshold: ${params.umi_quality_threshold}"
 log.info "  UMI collision rate threshold: ${params.umi_collision_rate_threshold}"
 log.info "  UMI diversity threshold: ${params.umi_diversity_threshold}"
+log.info "  UMI tool: ${params.umi_tool}"
+log.info "  Group strategy: ${params.group_strategy}"
+log.info "  Consensus strategy: ${params.consensus_strategy}"
+log.info "  Minimum reads: ${params.min_reads}"
+log.info "  Minimum fraction: ${params.min_fraction}"
+log.info "  Error rate pre-UMI: ${params.error_rate_pre_umi}"
+log.info "  Maximum edit distance: ${params.max_edit_distance}"
+log.info "  Minimum base quality: ${params.min_base_quality}"
 log.info "  Skip UMI QC: ${params.skip_umi_qc}"
 log.info "  Skip UMI analysis: ${params.skip_umi_analysis}"
 log.info "  Skip report: ${params.skip_report}"
@@ -175,6 +200,7 @@ log.info "  Skip report: ${params.skip_report}"
 // Load nf-core modules
 include { FASTQC } from './modules/nf-core/fastqc/main'
 include { MULTIQC } from './modules/nf-core/multiqc/main'
+
 include { UMITOOLS_EXTRACT } from './modules/nf-core/umitools/extract/main'
 include { BWA_MEM } from './modules/nf-core/bwa/mem/main'
 include { BWA_INDEX } from './modules/nf-core/bwa/index/main'
@@ -212,6 +238,14 @@ workflow {
         params.umi_quality_threshold,
         params.umi_collision_rate_threshold,
         params.umi_diversity_threshold,
+        params.umi_tool,
+        params.group_strategy,
+        params.consensus_strategy,
+        params.min_reads,
+        params.min_fraction,
+        params.error_rate_pre_umi,
+        params.max_edit_distance,
+        params.min_base_quality,
         params.skip_umi_qc,
         params.skip_umi_analysis,
         params.skip_report,

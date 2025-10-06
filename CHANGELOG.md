@@ -1,4 +1,4 @@
-# nf-core/umi-amplicon: Changelog
+# umi-amplicon: Changelog
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Initial release of nf-core/umi-amplicon
+- Initial release of umi-amplicon
 - UMI QC Metrics analysis
 - UMI Extraction functionality
 - UMI Deduplication capabilities

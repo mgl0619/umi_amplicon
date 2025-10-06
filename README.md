@@ -3,14 +3,11 @@
 [![Nextflow](https://img.shields.io/badge/nextflow%20DSL2-%E2%89%A521.04.0-23aa62.svg)](https://www.nextflow.io/)
 [![run with docker](https://img.shields.io/badge/run%20with-docker-0db7ed?labelColor=000000&logo=docker)](https://www.docker.com/)
 
-[![Follow on Twitter](http://img.shields.io/badge/twitter-%40nf__core-1DA1F2?labelColor=000000&logo=twitter)](https://twitter.com/nf_core)
-[![Watch on YouTube](http://img.shields.io/badge/youtube-nf--core-FF0000?labelColor=000000&logo=youtube)](https://www.youtube.com/c/nf-core)
-
 ## Introduction
 
 **umi-amplicon** is a bioinformatics best-practice analysis pipeline for UMI-tagged amplicon sequencing data.
 
-The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool to run tasks across multiple compute infrastructures in a very portable manner. It uses Docker containers making installation trivial and results highly reproducible. The [Nextflow DSL2](https://www.nextflow.io/docs/latest/dsl2.html) implementation of this pipeline uses one container per process which makes it much easier to maintain and update software dependencies. Where possible, these processes have been submitted to and installed from [nf-core/modules](https://github.com/nf-core/modules) in order to make them available to all nf-core pipelines, and to everyone within the Nextflow community!
+The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool to run tasks across multiple compute infrastructures in a very portable manner. It uses Docker containers making installation trivial and results highly reproducible. The [Nextflow DSL2](https://www.nextflow.io/docs/latest/dsl2.html) implementation of this pipeline uses one container per process which makes it much easier to maintain and update software dependencies. Where possible, these processes have been submitted to and installed from [nf-core/modules](https://github.com/nf-core/modules)!
 
 On release, automated continuous integration tests run the pipeline on a full-sized dataset on the AWS cloud infrastructure. This ensures that the pipeline works on AWS, has sensible resource allocation defaults set to run on real-world datasets, and permits the persistent storage of results to be built into a standard structure. Results can be automatically transferred to various cloud providers.
 
@@ -76,15 +73,9 @@ nextflow run umi-amplicon \
 The umi-amplicon pipeline comes with documentation about the pipeline: [usage](https://nf-co.re/umi-amplicon/usage), [parameters](https://nf-co.re/umi-amplicon/parameters) and [output](https://nf-co.re/umi-amplicon/output).
 
 
-## Contributions and Support
-
-If you would like to contribute to this pipeline, please see the [contributing guidelines](.github/CONTRIBUTING.md).
-
-For further information or help, don't hesitate to get in touch on the [Slack `#umi-amplicon` channel](https://nfcore.slack.com/channels/umi-amplicon) (you can join with [this invite](https://nfcore.slack.com/join/shared_invite/zt-upal21yp-CFRVZhZp2BwMwiKx2bNDw)).
-
 ## Citation
 
-If you use umi-amplicon for your analysis please cite it using the following doi: [10.5281/zenodo.XXXXXXX](https://doi.org/10.5281/zenodo.XXXXXXX)
+If you use umi-amplicon for your analysis please cite it and nf-core for credit. 
 
 You can cite the `nf-core` publication as follows:
 
@@ -196,19 +187,6 @@ nextflow run umi-amplicon \
 1. **Memory Issues**: Increase memory allocation for large datasets
 2. **Quality Issues**: Adjust quality thresholds for your data
 3. **Pattern Issues**: Verify UMI patterns match your experimental design
-
-### Getting Help
-- Check the [documentation](https://nf-co.re/umi-amplicon)
-- Join the [Slack channel](https://nfcore.slack.com/channels/umi-amplicon)
-- Open an [issue](https://github.com/umi-amplicon/issues)
-
-## Contributing
-
-We welcome contributions to the pipeline! Please see our [contributing guidelines](.github/CONTRIBUTING.md) for more information.
-
-## License
-
-This pipeline is licensed under the MIT License. See [LICENSE](LICENSE) for more details.
 
 ## Acknowledgments
 
