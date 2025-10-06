@@ -32,6 +32,7 @@ jobs:
         run: |
           wget -qO- https://get.nextflow.io | bash
           sudo mv nextflow /usr/local/bin/
+          nextflow -version
 
       - name: Install Docker
         run: |
