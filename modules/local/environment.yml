@@ -1,0 +1,9 @@
+name: umi_extract_embedded
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  - umitools=1.1.6
+  - python=3.11
+

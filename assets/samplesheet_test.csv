@@ -1,0 +1,2 @@
+sample,fastq_1,fastq_2,umi_1,umi_2
+CONTROL_REP1,/Users/gangliu2001/repo/umi_amplicon/test_data/test_umi_cleanname_1.fastq.gz,/Users/gangliu2001/repo/umi_amplicon/test_data/test_umi_cleanname_2.fastq.gz,,

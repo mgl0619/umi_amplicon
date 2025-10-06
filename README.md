@@ -1,15 +1,14 @@
-# nf-core/umi-amplicon
+# umi-amplicon
 
 [![Nextflow](https://img.shields.io/badge/nextflow%20DSL2-%E2%89%A521.04.0-23aa62.svg)](https://www.nextflow.io/)
 [![run with docker](https://img.shields.io/badge/run%20with-docker-0db7ed?labelColor=000000&logo=docker)](https://www.docker.com/)
 
-[![Get help on Slack](http://img.shields.io/badge/slack-nf--core%20%23umi--amplicon-4A154B?labelColor=000000&logo=slack)](https://nfcore.slack.com/channels/umi-amplicon)
 [![Follow on Twitter](http://img.shields.io/badge/twitter-%40nf__core-1DA1F2?labelColor=000000&logo=twitter)](https://twitter.com/nf_core)
 [![Watch on YouTube](http://img.shields.io/badge/youtube-nf--core-FF0000?labelColor=000000&logo=youtube)](https://www.youtube.com/c/nf-core)
 
 ## Introduction
 
-**nf-core/umi-amplicon** is a bioinformatics best-practice analysis pipeline for UMI-tagged amplicon sequencing data.
+**umi-amplicon** is a bioinformatics best-practice analysis pipeline for UMI-tagged amplicon sequencing data.
 
 The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool to run tasks across multiple compute infrastructures in a very portable manner. It uses Docker containers making installation trivial and results highly reproducible. The [Nextflow DSL2](https://www.nextflow.io/docs/latest/dsl2.html) implementation of this pipeline uses one container per process which makes it much easier to maintain and update software dependencies. Where possible, these processes have been submitted to and installed from [nf-core/modules](https://github.com/nf-core/modules) in order to make them available to all nf-core pipelines, and to everyone within the Nextflow community!
 
@@ -17,7 +16,7 @@ On release, automated continuous integration tests run the pipeline on a full-si
 
 ## Pipeline summary
 
-The nf-core/umi-amplicon pipeline performs the following steps:
+The umi-amplicon pipeline performs the following steps:
 
 1. **UMI Quality Control** - Comprehensive QC metrics including:
    - UMI diversity analysis
@@ -57,7 +56,7 @@ The nf-core/umi-amplicon pipeline performs the following steps:
 3. Download the pipeline and test it on a minimal dataset with a single command:
 
 ```bash
-nextflow run nf-core/umi-amplicon -profile test,<docker/institutional> --outdir <OUTDIR>
+nextflow run umi-amplicon -profile test,<docker/institutional> --outdir <OUTDIR>
 ```
 
 > Please check [nf-core/configs](https://github.com/nf-core/configs#documentation) to see if a custom config file to run nf-core pipelines already exists for your Institution. If so, you can simply use `-profile <institutional>` in your command. This will enable `docker` and set the appropriate execution settings for your local compute environment.
@@ -65,7 +64,7 @@ nextflow run nf-core/umi-amplicon -profile test,<docker/institutional> --outdir 
 4. Start running your own analysis!
 
 ```bash
-nextflow run nf-core/umi-amplicon \
+nextflow run umi-amplicon \
     --input samplesheet.csv \
     --outdir <OUTDIR> \
     --genome <GENOME> \
@@ -74,7 +73,7 @@ nextflow run nf-core/umi-amplicon \
 
 ## Documentation
 
-The nf-core/umi-amplicon pipeline comes with documentation about the pipeline: [usage](https://nf-co.re/umi-amplicon/usage), [parameters](https://nf-co.re/umi-amplicon/parameters) and [output](https://nf-co.re/umi-amplicon/output).
+The umi-amplicon pipeline comes with documentation about the pipeline: [usage](https://nf-co.re/umi-amplicon/usage), [parameters](https://nf-co.re/umi-amplicon/parameters) and [output](https://nf-co.re/umi-amplicon/output).
 
 
 ## Contributions and Support
@@ -85,7 +84,7 @@ For further information or help, don't hesitate to get in touch on the [Slack `#
 
 ## Citation
 
-If you use nf-core/umi-amplicon for your analysis please cite it using the following doi: [10.5281/zenodo.XXXXXXX](https://doi.org/10.5281/zenodo.XXXXXXX)
+If you use umi-amplicon for your analysis please cite it using the following doi: [10.5281/zenodo.XXXXXXX](https://doi.org/10.5281/zenodo.XXXXXXX)
 
 You can cite the `nf-core` publication as follows:
 
@@ -164,14 +163,14 @@ The pipeline produces the following outputs:
 
 ### Basic Usage
 ```bash
-nextflow run nf-core/umi-amplicon \
+nextflow run umi-amplicon \
     --input samplesheet.csv \
     --outdir results/
 ```
 
 ### Advanced Usage
 ```bash
-nextflow run nf-core/umi-amplicon \
+nextflow run umi-amplicon \
     --input samplesheet.csv \
     --outdir results/ \
     --umi_length 12 \
@@ -184,7 +183,7 @@ nextflow run nf-core/umi-amplicon \
 
 ### Custom Configuration
 ```bash
-nextflow run nf-core/umi-amplicon \
+nextflow run umi-amplicon \
     --input samplesheet.csv \
     --outdir results/ \
     -profile custom \
@@ -201,7 +200,7 @@ nextflow run nf-core/umi-amplicon \
 ### Getting Help
 - Check the [documentation](https://nf-co.re/umi-amplicon)
 - Join the [Slack channel](https://nfcore.slack.com/channels/umi-amplicon)
-- Open an [issue](https://github.com/nf-core/umi-amplicon/issues)
+- Open an [issue](https://github.com/umi-amplicon/issues)
 
 ## Contributing
 

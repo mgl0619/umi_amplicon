@@ -1,10 +1,7 @@
 process UMI_QC_METRICS {
     label 'process_medium'
 
-    conda (params.enable_conda ? "bioconda::umitools=1.1.2" : null)
-    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/umitools:1.1.2--pyhdfd78af_0' :
-        'biocontainers/umitools:1.1.2--pyhdfd78af_0' }"
+    container "quay.io/biocontainers/umitools:1.1.2--pyhdfd78af_0"
 
     input:
     tuple val(sample), path(fastq_1), path(fastq_2), path(umi_1), path(umi_2)
@@ -35,48 +32,67 @@ process UMI_QC_METRICS {
     total_reads=\$(zcat ${fastq_1} | wc -l | awk '{print \$1/4}')
     echo "Total reads: \$total_reads" > ${sample}.qc_metrics.txt
     
-    # Extract UMI sequences from UMI files
-    zcat ${umi_1} | awk 'NR%4==2' > ${sample}_umi1_sequences.txt
-    zcat ${umi_2} | awk 'NR%4==2' > ${sample}_umi2_sequences.txt
+    # Check if we have separate UMI files or embedded UMIs
+    if [ -f "${umi_1}" ] && [ -s "${umi_1}" ]; then
+        # Separate UMI files
+        zcat ${umi_1} | awk 'NR%4==2' > ${sample}_umi1_sequences.txt
+        zcat ${umi_2} | awk 'NR%4==2' > ${sample}_umi2_sequences.txt
+        
+        # Calculate UMI diversity (unique UMI combinations)
+        cat ${sample}_umi1_sequences.txt ${sample}_umi2_sequences.txt | \
+            sort | uniq | wc -l > ${sample}_umi_diversity.txt
+        umi_diversity=\$(cat ${sample}_umi_diversity.txt)
+        echo "UMI diversity: \$umi_diversity" >> ${sample}.qc_metrics.txt
+        
+        # Calculate UMI collision rate
+        total_umis=\$(cat ${sample}_umi1_sequences.txt | wc -l)
+        collision_rate=\$(echo "scale=4; (\$total_umis - \$umi_diversity) / \$total_umis" | bc -l)
+        echo "UMI collision rate: \$collision_rate" >> ${sample}.qc_metrics.txt
+        
+        # Calculate UMI quality metrics
+        zcat ${umi_1} | awk 'NR%4==4' > ${sample}_umi1_quality.txt
+        zcat ${umi_2} | awk 'NR%4==4' > ${sample}_umi2_quality.txt
+    else
+        # Embedded UMIs - extract from read sequences
+        echo "Processing embedded UMIs from read sequences"
+        echo "UMI diversity: N/A (embedded)" >> ${sample}.qc_metrics.txt
+        echo "UMI collision rate: N/A (embedded)" >> ${sample}.qc_metrics.txt
+        echo "Average UMI1 quality: N/A (embedded)" >> ${sample}.qc_metrics.txt
+        echo "Average UMI2 quality: N/A (embedded)" >> ${sample}.qc_metrics.txt
+        
+        # Set dummy values for embedded UMIs
+        umi_diversity=0
+        total_umis=0
+        collision_rate=0
+        avg_quality_umi1=0
+        avg_quality_umi2=0
+    fi
     
-    # Calculate UMI diversity (unique UMI combinations)
-    cat ${sample}_umi1_sequences.txt ${sample}_umi2_sequences.txt | \
-        sort | uniq | wc -l > ${sample}_umi_diversity.txt
-    umi_diversity=\$(cat ${sample}_umi_diversity.txt)
-    echo "UMI diversity: \$umi_diversity" >> ${sample}.qc_metrics.txt
+    # Calculate average quality scores (only for separate UMI files)
+    if [ -f "${umi_1}" ] && [ -s "${umi_1}" ]; then
+        avg_quality_umi1=\$(cat ${sample}_umi1_quality.txt | tr -d '\n' | fold -w1 | awk '{print ord(\$0)-33}' | awk '{sum+=\$1; count++} END {print sum/count}')
+        avg_quality_umi2=\$(cat ${sample}_umi2_quality.txt | tr -d '\n' | fold -w1 | awk '{print ord(\$0)-33}' | awk '{sum+=\$1; count++} END {print sum/count}')
+        echo "Average UMI1 quality: \$avg_quality_umi1" >> ${sample}.qc_metrics.txt
+        echo "Average UMI2 quality: \$avg_quality_umi2" >> ${sample}.qc_metrics.txt
+    fi
     
-    # Calculate UMI collision rate
-    total_umis=\$(cat ${sample}_umi1_sequences.txt | wc -l)
-    collision_rate=\$(echo "scale=4; (\$total_umis - \$umi_diversity) / \$total_umis" | bc -l)
-    echo "UMI collision rate: \$collision_rate" >> ${sample}.qc_metrics.txt
-    
-    # Calculate UMI quality metrics
-    zcat ${umi_1} | awk 'NR%4==4' > ${sample}_umi1_quality.txt
-    zcat ${umi_2} | awk 'NR%4==4' > ${sample}_umi2_quality.txt
-    
-    # Calculate average quality scores
-    avg_quality_umi1=\$(cat ${sample}_umi1_quality.txt | tr -d '\n' | fold -w1 | awk '{print ord(\$0)-33}' | awk '{sum+=\$1; count++} END {print sum/count}')
-    avg_quality_umi2=\$(cat ${sample}_umi2_quality.txt | tr -d '\n' | fold -w1 | awk '{print ord(\$0)-33}' | awk '{sum+=\$1; count++} END {print sum/count}')
-    echo "Average UMI1 quality: \$avg_quality_umi1" >> ${sample}.qc_metrics.txt
-    echo "Average UMI2 quality: \$avg_quality_umi2" >> ${sample}.qc_metrics.txt
-    
-    # Generate MultiQC data
-    cat > ${sample}.multiqc_data.json << EOF
-{
-    "plot_data": {
-        "umi_diversity": {
-            "umi1_unique": $umi_diversity,
-            "umi2_unique": $umi_diversity,
-            "total_umis": $total_umis
-        },
-        "collision_rate": $collision_rate,
-        "quality_metrics": {
-            "avg_quality_umi1": $avg_quality_umi1,
-            "avg_quality_umi2": $avg_quality_umi2
-        }
-    }
-}
-EOF
+      # Generate MultiQC data
+      cat > ${sample}.multiqc_data.json << EOF
+  {
+      "plot_data": {
+          "umi_diversity": {
+              "umi1_unique": \$umi_diversity,
+              "umi2_unique": \$umi_diversity,
+              "total_umis": \$total_umis
+          },
+          "collision_rate": \$collision_rate,
+          "quality_metrics": {
+              "avg_quality_umi1": \$avg_quality_umi1,
+              "avg_quality_umi2": \$avg_quality_umi2
+          }
+      }
+  }
+  EOF
 
     # Clean up temporary files
     rm -f ${sample}_umi1_sequences.txt ${sample}_umi2_sequences.txt ${sample}_umi_diversity.txt
