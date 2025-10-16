@@ -32,7 +32,7 @@ The umi-amplicon pipeline performs the following steps:
    - Adapter content detection
    - Base quality distribution
 
-2. **FASTP Round 1** - Initial QC and filtering (preserves 5' UMIs):
+2a. **FASTP Round 1** - Initial QC and filtering (preserves 5' UMIs):
    - Adapter detection and trimming
    - Quality filtering (removes poor quality reads)
    - 3' end trimming only
@@ -49,7 +49,7 @@ The umi-amplicon pipeline performs the following steps:
    - Extraction statistics and logs
    - **Critical**: Uses output from FASTP Round 1 (5' end intact)
 
-4. **FASTP Round 2** - Complete preprocessing with full trimming:
+4a. **FASTP Round 2** - Complete preprocessing with full trimming:
    - Full 5' and 3' end trimming (UMIs now in headers)
    - Adapter trimming
    - Quality filtering
@@ -81,7 +81,7 @@ The umi-amplicon pipeline performs the following steps:
    - Error correction and UMI family grouping
    - Outputs deduplicated BAM files
 
-8. **Post-Deduplication UMI QC** - Deduplication performance metrics:
+8a. **Post-Deduplication UMI QC** - Deduplication performance metrics:
    - UMI family statistics (count, sizes, distribution)
    - Edit distance analysis between UMIs (error correction/clustering)
    - Deduplication rate and efficiency
@@ -168,20 +168,21 @@ You can cite the `nf-core` publication as follows:
 ```mermaid
 graph TD
     A[Raw Reads] --> B[FastQC]
-    A --> C[FASTP - Merge & QC]
+    A --> C[FASTP - QC & No 5p Trimming]
     C --> D[UMI Extraction]
     D --> E[Pre-Dedup UMI QC]
-    D --> F[Alignment - BWA-MEM]
-    F --> G[UMI Deduplication]
-    G --> H[Post-Dedup UMI QC]
-    G --> I[Feature Counting]
-    H --> J[UMI Analysis]
-    B --> K[MultiQC Report]
-    E --> K
-    H --> K
-    I --> K
-    J --> K
-    K --> L[Final Results]
+    D --> F[FASTP - Full Trimming]
+    F --> G[Alignment - BWA-MEM]
+    G --> H[UMI Deduplication]
+    H --> I[Post-Dedup UMI QC]
+    I --> J[Feature Counting]
+    E --> K[UMI QC HTML Report]
+    I --> K[UMI QC HTML Report]
+    B --> L[MultiQC Report]
+    D --> L[MultiQC Report]
+    F --> L[MultiQC Report]
+    J --> L[MultiQC Report]
+    L --> M[Final Results]
 ```
 
 ## UMI Analysis Features

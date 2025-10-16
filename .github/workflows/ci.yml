@@ -1,4 +1,4 @@
-name: umi-amplicon CI
+name: umi_amplicon CI
 # This workflow runs the pipeline with the minimal test dataset to check that it completes without error
 on:
   push:
