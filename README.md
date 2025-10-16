@@ -18,12 +18,12 @@ The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool
 The umi-amplicon pipeline performs the following steps:
 
 ### Critical Workflow Design
-> **⚠️ Two-Round FASTP Strategy**: This pipeline uses a novel **two-round FASTP approach** to ensure UMI integrity:
+> ** Two-Round FASTP Strategy**: This pipeline uses a novel **two-round FASTP approach** to ensure UMI integrity:
 > 1. **First FASTP** (before UMI extraction): Adapter trimming, quality filtering, 3' trimming - but **NO 5' trimming** to preserve UMIs
 > 2. **UMI Extraction**: Extract intact UMIs from 5' end and move to read headers
 > 3. **Second FASTP** (after UMI extraction): Full trimming including 5' end, merging - UMIs are now safe in headers
 
-> **⚠️ UMI Design Assumption**: This pipeline assumes that **UMIs are present at the 5' end of Read 1**. For paired-end data, the UMI is extracted from Read 1 only. This is a common experimental design for amplicon sequencing where UMIs are incorporated during the first PCR primer.
+> ** UMI Design Assumption**: This pipeline assumes that **UMIs are present at the 5' end of Read 1**. For paired-end data, the UMI is extracted from Read 1 only. This is a common experimental design for amplicon sequencing where UMIs are incorporated during the first PCR primer.
 
 ### Workflow Steps
 
@@ -32,7 +32,7 @@ The umi-amplicon pipeline performs the following steps:
    - Adapter content detection
    - Base quality distribution
 
-2a. **FASTP Round 1** - Initial QC and filtering (preserves 5' UMIs):
+2. **FASTP Round 1** - Initial QC and filtering (preserves 5' UMIs):
    - Adapter detection and trimming
    - Quality filtering (removes poor quality reads)
    - 3' end trimming only
@@ -146,11 +146,6 @@ nextflow run umi-amplicon \
     -profile conda
 ```
 
-## Documentation
-
-The umi-amplicon pipeline comes with documentation about the pipeline: [usage](https://nf-co.re/umi-amplicon/usage), [parameters](https://nf-co.re/umi-amplicon/parameters) and [output](https://nf-co.re/umi-amplicon/output).
-
-
 ## Citation
 
 If you use umi-amplicon for your analysis please cite it and nf-core for credit. 
@@ -234,13 +229,6 @@ The pipeline produces the following outputs:
 ## Usage Examples
 
 ### Basic Usage
-```bash
-nextflow run umi-amplicon \
-    --input samplesheet.csv \
-    --outdir results/
-```
-
-### Advanced Usage
 ```bash
 nextflow run umi-amplicon \
     --input samplesheet.csv \
