@@ -1,0 +1,774 @@
+digraph "pipeline_dag" {
+v0 [shape=point,label="",fixedsize=true,width=0.1,xlabel="Channel.fromPath"];
+v1 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="splitCsv"];
+v0 -> v1;
+
+v1 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="splitCsv"];
+v2 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="map"];
+v1 -> v2;
+
+v2 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="map"];
+v7 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="map"];
+v2 -> v7 [label="samples"];
+
+v3 [shape=point,label="",fixedsize=true,width=0.1,xlabel="Channel.empty"];
+v141 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v3 -> v141 [label="ch_versions"];
+
+v4 [shape=point,label="",fixedsize=true,width=0.1,xlabel="Channel.empty"];
+v142 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v4 -> v142 [label="ch_multiqc_files"];
+
+v5 [shape=point,label="",fixedsize=true,width=0.1,xlabel="Channel.empty"];
+v10 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v5 -> v10 [label="ch_versions"];
+
+v6 [shape=point,label="",fixedsize=true,width=0.1,xlabel="Channel.empty"];
+v13 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v6 -> v13 [label="ch_multiqc_files"];
+
+v7 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="map"];
+v8 [label="UMI_ANALYSIS_SUBWORKFLOW:FASTQC_RAW"];
+v7 -> v8 [label="ch_samples_for_fastqc_raw"];
+
+v8 [label="UMI_ANALYSIS_SUBWORKFLOW:FASTQC_RAW"];
+v11 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="map"];
+v8 -> v11;
+
+v8 [label="UMI_ANALYSIS_SUBWORKFLOW:FASTQC_RAW"];
+v9 [shape=point];
+v8 -> v9;
+
+v8 [label="UMI_ANALYSIS_SUBWORKFLOW:FASTQC_RAW"];
+v10 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v8 -> v10;
+
+v10 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v23 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v10 -> v23 [label="ch_versions"];
+
+v11 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="map"];
+v12 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="flatten"];
+v11 -> v12;
+
+v12 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="flatten"];
+v13 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v12 -> v13;
+
+v13 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v26 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v13 -> v26 [label="ch_multiqc_files"];
+
+v2 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="map"];
+v14 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="map"];
+v2 -> v14 [label="samples"];
+
+v14 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="map"];
+v18 [label="UMI_ANALYSIS_SUBWORKFLOW:FASTP_QC"];
+v14 -> v18 [label="ch_samples_for_fastp_qc"];
+
+v15 [shape=point,label="",fixedsize=true,width=0.1];
+v18 [label="UMI_ANALYSIS_SUBWORKFLOW:FASTP_QC"];
+v15 -> v18 [label="discard_trimmed_pass"];
+
+v16 [shape=point,label="",fixedsize=true,width=0.1];
+v18 [label="UMI_ANALYSIS_SUBWORKFLOW:FASTP_QC"];
+v16 -> v18 [label="save_trimmed_fail"];
+
+v17 [shape=point,label="",fixedsize=true,width=0.1];
+v18 [label="UMI_ANALYSIS_SUBWORKFLOW:FASTP_QC"];
+v17 -> v18 [label="save_merged"];
+
+v18 [label="UMI_ANALYSIS_SUBWORKFLOW:FASTP_QC"];
+v27 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="map"];
+v18 -> v27;
+
+v18 [label="UMI_ANALYSIS_SUBWORKFLOW:FASTP_QC"];
+v24 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="map"];
+v18 -> v24;
+
+v18 [label="UMI_ANALYSIS_SUBWORKFLOW:FASTP_QC"];
+v22 [shape=point];
+v18 -> v22;
+
+v18 [label="UMI_ANALYSIS_SUBWORKFLOW:FASTP_QC"];
+v21 [shape=point];
+v18 -> v21;
+
+v18 [label="UMI_ANALYSIS_SUBWORKFLOW:FASTP_QC"];
+v20 [shape=point];
+v18 -> v20;
+
+v18 [label="UMI_ANALYSIS_SUBWORKFLOW:FASTP_QC"];
+v19 [shape=point];
+v18 -> v19;
+
+v18 [label="UMI_ANALYSIS_SUBWORKFLOW:FASTP_QC"];
+v23 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v18 -> v23;
+
+v23 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v30 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v23 -> v30 [label="ch_versions"];
+
+v24 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="map"];
+v25 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="flatten"];
+v24 -> v25;
+
+v25 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="flatten"];
+v26 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v25 -> v26;
+
+v26 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v33 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v26 -> v33 [label="ch_multiqc_files"];
+
+v27 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="map"];
+v28 [label="UMI_ANALYSIS_SUBWORKFLOW:FASTQC_FASTP_QC"];
+v27 -> v28 [label="ch_samples_for_fastqc_after_qc"];
+
+v28 [label="UMI_ANALYSIS_SUBWORKFLOW:FASTQC_FASTP_QC"];
+v31 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="map"];
+v28 -> v31;
+
+v28 [label="UMI_ANALYSIS_SUBWORKFLOW:FASTQC_FASTP_QC"];
+v29 [shape=point];
+v28 -> v29;
+
+v28 [label="UMI_ANALYSIS_SUBWORKFLOW:FASTQC_FASTP_QC"];
+v30 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v28 -> v30;
+
+v30 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v36 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v30 -> v36 [label="ch_versions"];
+
+v31 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="map"];
+v32 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="flatten"];
+v31 -> v32;
+
+v32 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="flatten"];
+v33 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v32 -> v33;
+
+v33 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v52 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v33 -> v52 [label="ch_multiqc_files"];
+
+v18 [label="UMI_ANALYSIS_SUBWORKFLOW:FASTP_QC"];
+v34 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="map"];
+v18 -> v34;
+
+v34 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="map"];
+v35 [label="UMI_ANALYSIS_SUBWORKFLOW:UMITOOLS_EXTRACT"];
+v34 -> v35 [label="ch_samples_for_extract"];
+
+v35 [label="UMI_ANALYSIS_SUBWORKFLOW:UMITOOLS_EXTRACT"];
+v37 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="join"];
+v35 -> v37 [label="extracted"];
+
+v35 [label="UMI_ANALYSIS_SUBWORKFLOW:UMITOOLS_EXTRACT"];
+v43 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="join"];
+v35 -> v43;
+
+v35 [label="UMI_ANALYSIS_SUBWORKFLOW:UMITOOLS_EXTRACT"];
+v36 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v35 -> v36;
+
+v36 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v41 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v36 -> v41 [label="ch_versions"];
+
+v34 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="map"];
+v37 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="join"];
+v34 -> v37 [label="ch_samples_for_extract"];
+
+v37 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="join"];
+v38 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="map"];
+v37 -> v38;
+
+v38 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="map"];
+v40 [label="UMI_ANALYSIS_SUBWORKFLOW:EXTRACT_UMI_QUALITY"];
+v38 -> v40 [label="ch_for_umi_quality"];
+
+v39 [shape=point,label="",fixedsize=true,width=0.1];
+v40 [label="UMI_ANALYSIS_SUBWORKFLOW:EXTRACT_UMI_QUALITY"];
+v39 -> v40 [label="umi_length"];
+
+v40 [label="UMI_ANALYSIS_SUBWORKFLOW:EXTRACT_UMI_QUALITY"];
+v44 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="join"];
+v40 -> v44;
+
+v40 [label="UMI_ANALYSIS_SUBWORKFLOW:EXTRACT_UMI_QUALITY"];
+v41 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v40 -> v41;
+
+v41 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v50 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v41 -> v50 [label="ch_versions"];
+
+v35 [label="UMI_ANALYSIS_SUBWORKFLOW:UMITOOLS_EXTRACT"];
+v42 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="map"];
+v35 -> v42 [label="extracted"];
+
+v42 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="map"];
+v43 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="join"];
+v42 -> v43 [label="ch_samples_for_qc"];
+
+v43 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="join"];
+v44 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="join"];
+v43 -> v44;
+
+v44 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="join"];
+v49 [label="UMI_ANALYSIS_SUBWORKFLOW:UMI_QC_METRICS_POSTUMIEXTRACT"];
+v44 -> v49 [label="ch_qc_input"];
+
+v45 [shape=point,label="",fixedsize=true,width=0.1];
+v49 [label="UMI_ANALYSIS_SUBWORKFLOW:UMI_QC_METRICS_POSTUMIEXTRACT"];
+v45 -> v49 [label="umi_length"];
+
+v46 [shape=point,label="",fixedsize=true,width=0.1];
+v49 [label="UMI_ANALYSIS_SUBWORKFLOW:UMI_QC_METRICS_POSTUMIEXTRACT"];
+v46 -> v49 [label="umi_quality_filter_threshold"];
+
+v47 [shape=point,label="",fixedsize=true,width=0.1];
+v49 [label="UMI_ANALYSIS_SUBWORKFLOW:UMI_QC_METRICS_POSTUMIEXTRACT"];
+v47 -> v49 [label="umi_collision_rate_threshold"];
+
+v48 [shape=point,label="",fixedsize=true,width=0.1];
+v49 [label="UMI_ANALYSIS_SUBWORKFLOW:UMI_QC_METRICS_POSTUMIEXTRACT"];
+v48 -> v49 [label="umi_diversity_threshold"];
+
+v49 [label="UMI_ANALYSIS_SUBWORKFLOW:UMI_QC_METRICS_POSTUMIEXTRACT"];
+v118 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="join"];
+v49 -> v118;
+
+v49 [label="UMI_ANALYSIS_SUBWORKFLOW:UMI_QC_METRICS_POSTUMIEXTRACT"];
+v50 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v49 -> v50;
+
+v49 [label="UMI_ANALYSIS_SUBWORKFLOW:UMI_QC_METRICS_POSTUMIEXTRACT"];
+v51 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="map"];
+v49 -> v51;
+
+v50 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v62 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v50 -> v62 [label="ch_versions"];
+
+v51 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="map"];
+v52 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v51 -> v52;
+
+v52 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v65 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v52 -> v65 [label="ch_multiqc_files"];
+
+v35 [label="UMI_ANALYSIS_SUBWORKFLOW:UMITOOLS_EXTRACT"];
+v53 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="map"];
+v35 -> v53 [label="extracted"];
+
+v53 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="map"];
+v57 [label="UMI_ANALYSIS_SUBWORKFLOW:FASTP_TRIM"];
+v53 -> v57 [label="ch_samples_for_fastp_trim"];
+
+v54 [shape=point,label="",fixedsize=true,width=0.1];
+v57 [label="UMI_ANALYSIS_SUBWORKFLOW:FASTP_TRIM"];
+v54 -> v57 [label="discard_trimmed_pass"];
+
+v55 [shape=point,label="",fixedsize=true,width=0.1];
+v57 [label="UMI_ANALYSIS_SUBWORKFLOW:FASTP_TRIM"];
+v55 -> v57 [label="save_trimmed_fail"];
+
+v56 [shape=point,label="",fixedsize=true,width=0.1];
+v57 [label="UMI_ANALYSIS_SUBWORKFLOW:FASTP_TRIM"];
+v56 -> v57 [label="save_merged"];
+
+v57 [label="UMI_ANALYSIS_SUBWORKFLOW:FASTP_TRIM"];
+v66 [label="UMI_ANALYSIS_SUBWORKFLOW:FASTQC_FASTP_TRIM"];
+v57 -> v66;
+
+v57 [label="UMI_ANALYSIS_SUBWORKFLOW:FASTP_TRIM"];
+v63 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="map"];
+v57 -> v63;
+
+v57 [label="UMI_ANALYSIS_SUBWORKFLOW:FASTP_TRIM"];
+v61 [shape=point];
+v57 -> v61;
+
+v57 [label="UMI_ANALYSIS_SUBWORKFLOW:FASTP_TRIM"];
+v60 [shape=point];
+v57 -> v60;
+
+v57 [label="UMI_ANALYSIS_SUBWORKFLOW:FASTP_TRIM"];
+v59 [shape=point];
+v57 -> v59;
+
+v57 [label="UMI_ANALYSIS_SUBWORKFLOW:FASTP_TRIM"];
+v58 [shape=point];
+v57 -> v58;
+
+v57 [label="UMI_ANALYSIS_SUBWORKFLOW:FASTP_TRIM"];
+v62 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v57 -> v62;
+
+v62 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v68 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v62 -> v68 [label="ch_versions"];
+
+v63 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="map"];
+v64 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="flatten"];
+v63 -> v64;
+
+v64 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="flatten"];
+v65 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v64 -> v65;
+
+v65 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v71 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v65 -> v71 [label="ch_multiqc_files"];
+
+v66 [label="UMI_ANALYSIS_SUBWORKFLOW:FASTQC_FASTP_TRIM"];
+v69 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="map"];
+v66 -> v69;
+
+v66 [label="UMI_ANALYSIS_SUBWORKFLOW:FASTQC_FASTP_TRIM"];
+v67 [shape=point];
+v66 -> v67;
+
+v66 [label="UMI_ANALYSIS_SUBWORKFLOW:FASTQC_FASTP_TRIM"];
+v68 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v66 -> v68;
+
+v68 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v75 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v68 -> v75 [label="ch_versions"];
+
+v69 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="map"];
+v70 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="flatten"];
+v69 -> v70;
+
+v70 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="flatten"];
+v71 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v70 -> v71;
+
+v71 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v94 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v71 -> v94 [label="ch_multiqc_files"];
+
+v57 [label="UMI_ANALYSIS_SUBWORKFLOW:FASTP_TRIM"];
+v72 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="map"];
+v57 -> v72;
+
+v72 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="map"];
+v76 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="map"];
+v72 -> v76 [label="processed"];
+
+v73 [shape=point,label="",fixedsize=true,width=0.1,xlabel="Channel.of"];
+v74 [label="UMI_ANALYSIS_SUBWORKFLOW:BWA_INDEX"];
+v73 -> v74 [label="ch_fasta_for_index"];
+
+v74 [label="UMI_ANALYSIS_SUBWORKFLOW:BWA_INDEX"];
+v79 [label="UMI_ANALYSIS_SUBWORKFLOW:BWA_MEM"];
+v74 -> v79 [label="ch_bwa_index"];
+
+v74 [label="UMI_ANALYSIS_SUBWORKFLOW:BWA_INDEX"];
+v75 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v74 -> v75;
+
+v75 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v83 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v75 -> v83 [label="ch_versions"];
+
+v76 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="map"];
+v79 [label="UMI_ANALYSIS_SUBWORKFLOW:BWA_MEM"];
+v76 -> v79 [label="ch_samples_for_align"];
+
+v77 [shape=point,label="",fixedsize=true,width=0.1,xlabel="Channel.of"];
+v79 [label="UMI_ANALYSIS_SUBWORKFLOW:BWA_MEM"];
+v77 -> v79 [label="ch_fasta"];
+
+v78 [shape=point,label="",fixedsize=true,width=0.1];
+v79 [label="UMI_ANALYSIS_SUBWORKFLOW:BWA_MEM"];
+v78 -> v79 [label="sort_bam"];
+
+v79 [label="UMI_ANALYSIS_SUBWORKFLOW:BWA_MEM"];
+v84 [label="UMI_ANALYSIS_SUBWORKFLOW:SAMTOOLS_INDEX"];
+v79 -> v84 [label="aligned"];
+
+v79 [label="UMI_ANALYSIS_SUBWORKFLOW:BWA_MEM"];
+v82 [shape=point];
+v79 -> v82;
+
+v79 [label="UMI_ANALYSIS_SUBWORKFLOW:BWA_MEM"];
+v81 [shape=point];
+v79 -> v81;
+
+v79 [label="UMI_ANALYSIS_SUBWORKFLOW:BWA_MEM"];
+v80 [shape=point];
+v79 -> v80;
+
+v79 [label="UMI_ANALYSIS_SUBWORKFLOW:BWA_MEM"];
+v83 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v79 -> v83;
+
+v83 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v87 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v83 -> v87 [label="ch_versions"];
+
+v84 [label="UMI_ANALYSIS_SUBWORKFLOW:SAMTOOLS_INDEX"];
+v88 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="join"];
+v84 -> v88;
+
+v84 [label="UMI_ANALYSIS_SUBWORKFLOW:SAMTOOLS_INDEX"];
+v86 [shape=point];
+v84 -> v86;
+
+v84 [label="UMI_ANALYSIS_SUBWORKFLOW:SAMTOOLS_INDEX"];
+v85 [shape=point];
+v84 -> v85;
+
+v84 [label="UMI_ANALYSIS_SUBWORKFLOW:SAMTOOLS_INDEX"];
+v87 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v84 -> v87;
+
+v87 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v91 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v87 -> v91 [label="ch_versions"];
+
+v79 [label="UMI_ANALYSIS_SUBWORKFLOW:BWA_MEM"];
+v88 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="join"];
+v79 -> v88 [label="aligned"];
+
+v88 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="join"];
+v89 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="map"];
+v88 -> v89;
+
+v89 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="map"];
+v90 [label="UMI_ANALYSIS_SUBWORKFLOW:SAMTOOLS_STATS"];
+v89 -> v90 [label="ch_bam_bai_for_stats"];
+
+v77 [shape=point,label="",fixedsize=true,width=0.1,xlabel="Channel.of"];
+v90 [label="UMI_ANALYSIS_SUBWORKFLOW:SAMTOOLS_STATS"];
+v77 -> v90 [label="ch_fasta"];
+
+v90 [label="UMI_ANALYSIS_SUBWORKFLOW:SAMTOOLS_STATS"];
+v92 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="map"];
+v90 -> v92;
+
+v90 [label="UMI_ANALYSIS_SUBWORKFLOW:SAMTOOLS_STATS"];
+v91 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v90 -> v91;
+
+v91 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v96 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v91 -> v96 [label="ch_versions"];
+
+v92 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="map"];
+v93 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="flatten"];
+v92 -> v93;
+
+v93 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="flatten"];
+v94 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v93 -> v94;
+
+v94 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v99 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v94 -> v99 [label="ch_multiqc_files"];
+
+v89 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="map"];
+v95 [label="UMI_ANALYSIS_SUBWORKFLOW:SAMTOOLS_FLAGSTAT"];
+v89 -> v95 [label="ch_bam_bai_for_stats"];
+
+v95 [label="UMI_ANALYSIS_SUBWORKFLOW:SAMTOOLS_FLAGSTAT"];
+v97 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="map"];
+v95 -> v97;
+
+v95 [label="UMI_ANALYSIS_SUBWORKFLOW:SAMTOOLS_FLAGSTAT"];
+v96 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v95 -> v96;
+
+v96 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v101 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v96 -> v101 [label="ch_versions"];
+
+v97 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="map"];
+v98 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="flatten"];
+v97 -> v98;
+
+v98 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="flatten"];
+v99 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v98 -> v99;
+
+v99 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v104 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v99 -> v104 [label="ch_multiqc_files"];
+
+v89 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="map"];
+v100 [label="UMI_ANALYSIS_SUBWORKFLOW:SAMTOOLS_IDXSTATS"];
+v89 -> v100 [label="ch_bam_bai_for_stats"];
+
+v100 [label="UMI_ANALYSIS_SUBWORKFLOW:SAMTOOLS_IDXSTATS"];
+v102 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="map"];
+v100 -> v102;
+
+v100 [label="UMI_ANALYSIS_SUBWORKFLOW:SAMTOOLS_IDXSTATS"];
+v101 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v100 -> v101;
+
+v101 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v106 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v101 -> v106 [label="ch_versions"];
+
+v102 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="map"];
+v103 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="flatten"];
+v102 -> v103;
+
+v103 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="flatten"];
+v104 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v103 -> v104;
+
+v104 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v109 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v104 -> v109 [label="ch_multiqc_files"];
+
+v79 [label="UMI_ANALYSIS_SUBWORKFLOW:BWA_MEM"];
+v105 [label="UMI_ANALYSIS_SUBWORKFLOW:PICARD_COLLECTALIGNMENTSUMMARYMETRICS"];
+v79 -> v105 [label="aligned"];
+
+v77 [shape=point,label="",fixedsize=true,width=0.1,xlabel="Channel.of"];
+v105 [label="UMI_ANALYSIS_SUBWORKFLOW:PICARD_COLLECTALIGNMENTSUMMARYMETRICS"];
+v77 -> v105 [label="ch_fasta"];
+
+v105 [label="UMI_ANALYSIS_SUBWORKFLOW:PICARD_COLLECTALIGNMENTSUMMARYMETRICS"];
+v107 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="map"];
+v105 -> v107;
+
+v105 [label="UMI_ANALYSIS_SUBWORKFLOW:PICARD_COLLECTALIGNMENTSUMMARYMETRICS"];
+v106 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v105 -> v106;
+
+v106 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v114 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v106 -> v114 [label="ch_versions"];
+
+v107 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="map"];
+v108 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="flatten"];
+v107 -> v108;
+
+v108 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="flatten"];
+v109 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v108 -> v109;
+
+v109 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v125 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="collect"];
+v109 -> v125 [label="multiqc"];
+
+v84 [label="UMI_ANALYSIS_SUBWORKFLOW:SAMTOOLS_INDEX"];
+v110 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="join"];
+v84 -> v110;
+
+v79 [label="UMI_ANALYSIS_SUBWORKFLOW:BWA_MEM"];
+v110 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="join"];
+v79 -> v110 [label="aligned"];
+
+v110 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="join"];
+v111 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="map"];
+v110 -> v111;
+
+v111 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="map"];
+v113 [label="UMI_ANALYSIS_SUBWORKFLOW:UMITOOLS_DEDUP"];
+v111 -> v113 [label="ch_bam_bai"];
+
+v112 [shape=point,label="",fixedsize=true,width=0.1];
+v113 [label="UMI_ANALYSIS_SUBWORKFLOW:UMITOOLS_DEDUP"];
+v112 -> v113 [label="get_output_stats"];
+
+v113 [label="UMI_ANALYSIS_SUBWORKFLOW:UMITOOLS_DEDUP"];
+v115 [label="UMI_ANALYSIS_SUBWORKFLOW:UMI_QC_METRICS_POSTDEDUP"];
+v113 -> v115 [label="deduped"];
+
+v113 [label="UMI_ANALYSIS_SUBWORKFLOW:UMITOOLS_DEDUP"];
+v115 [label="UMI_ANALYSIS_SUBWORKFLOW:UMI_QC_METRICS_POSTDEDUP"];
+v113 -> v115;
+
+v113 [label="UMI_ANALYSIS_SUBWORKFLOW:UMITOOLS_DEDUP"];
+v115 [label="UMI_ANALYSIS_SUBWORKFLOW:UMI_QC_METRICS_POSTDEDUP"];
+v113 -> v115;
+
+v113 [label="UMI_ANALYSIS_SUBWORKFLOW:UMITOOLS_DEDUP"];
+v115 [label="UMI_ANALYSIS_SUBWORKFLOW:UMI_QC_METRICS_POSTDEDUP"];
+v113 -> v115;
+
+v113 [label="UMI_ANALYSIS_SUBWORKFLOW:UMITOOLS_DEDUP"];
+v115 [label="UMI_ANALYSIS_SUBWORKFLOW:UMI_QC_METRICS_POSTDEDUP"];
+v113 -> v115;
+
+v113 [label="UMI_ANALYSIS_SUBWORKFLOW:UMITOOLS_DEDUP"];
+v114 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v113 -> v114;
+
+v114 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v117 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v114 -> v117 [label="ch_versions"];
+
+v115 [label="UMI_ANALYSIS_SUBWORKFLOW:UMI_QC_METRICS_POSTDEDUP"];
+v116 [shape=point];
+v115 -> v116;
+
+v115 [label="UMI_ANALYSIS_SUBWORKFLOW:UMI_QC_METRICS_POSTDEDUP"];
+v117 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v115 -> v117;
+
+v115 [label="UMI_ANALYSIS_SUBWORKFLOW:UMI_QC_METRICS_POSTDEDUP"];
+v119 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="join"];
+v115 -> v119;
+
+v117 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v123 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v117 -> v123 [label="ch_versions"];
+
+v49 [label="UMI_ANALYSIS_SUBWORKFLOW:UMI_QC_METRICS_POSTUMIEXTRACT"];
+v118 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="join"];
+v49 -> v118;
+
+v118 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="join"];
+v119 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="join"];
+v118 -> v119;
+
+v119 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="join"];
+v120 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="map"];
+v119 -> v120;
+
+v120 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="map"];
+v121 [label="UMI_ANALYSIS_SUBWORKFLOW:UMI_QC_HTML_REPORT"];
+v120 -> v121 [label="ch_combined_metrics"];
+
+v121 [label="UMI_ANALYSIS_SUBWORKFLOW:UMI_QC_HTML_REPORT"];
+v122 [shape=point];
+v121 -> v122;
+
+v121 [label="UMI_ANALYSIS_SUBWORKFLOW:UMI_QC_HTML_REPORT"];
+v123 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v121 -> v123;
+
+v123 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v136 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v123 -> v136 [label="ch_versions"];
+
+v124 [shape=point,label="",fixedsize=true,width=0.1,xlabel="Channel.fromPath"];
+v126 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="collect"];
+v124 -> v126 [label="ch_multiqc_config"];
+
+v125 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="collect"];
+v132 [label="UMI_ANALYSIS_SUBWORKFLOW:MULTIQC"];
+v125 -> v132;
+
+v126 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="collect"];
+v127 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="ifEmpty"];
+v126 -> v127;
+
+v127 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="ifEmpty"];
+v132 [label="UMI_ANALYSIS_SUBWORKFLOW:MULTIQC"];
+v127 -> v132;
+
+v128 [shape=point,label="",fixedsize=true,width=0.1];
+v132 [label="UMI_ANALYSIS_SUBWORKFLOW:MULTIQC"];
+v128 -> v132 [label="extra_multiqc_config"];
+
+v129 [shape=point,label="",fixedsize=true,width=0.1];
+v132 [label="UMI_ANALYSIS_SUBWORKFLOW:MULTIQC"];
+v129 -> v132 [label="multiqc_logo"];
+
+v130 [shape=point,label="",fixedsize=true,width=0.1];
+v132 [label="UMI_ANALYSIS_SUBWORKFLOW:MULTIQC"];
+v130 -> v132 [label="replace_names"];
+
+v131 [shape=point,label="",fixedsize=true,width=0.1];
+v132 [label="UMI_ANALYSIS_SUBWORKFLOW:MULTIQC"];
+v131 -> v132 [label="sample_names"];
+
+v132 [label="UMI_ANALYSIS_SUBWORKFLOW:MULTIQC"];
+v135 [shape=point];
+v132 -> v135;
+
+v132 [label="UMI_ANALYSIS_SUBWORKFLOW:MULTIQC"];
+v134 [shape=point];
+v132 -> v134;
+
+v132 [label="UMI_ANALYSIS_SUBWORKFLOW:MULTIQC"];
+v133 [shape=point];
+v132 -> v133;
+
+v132 [label="UMI_ANALYSIS_SUBWORKFLOW:MULTIQC"];
+v136 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v132 -> v136;
+
+v136 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v141 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v136 -> v141 [label="versions"];
+
+v137 [shape=point,label="",fixedsize=true,width=0.1,xlabel="Channel.empty"];
+v138 [shape=point];
+v137 -> v138 [label="feature_counts"];
+
+v139 [shape=point,label="",fixedsize=true,width=0.1,xlabel="Channel.empty"];
+v140 [shape=point];
+v139 -> v140 [label="umi_html_report"];
+
+v141 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v153 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v141 -> v153 [label="ch_versions"];
+
+v109 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v142 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v109 -> v142 [label="multiqc"];
+
+v142 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v143 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="collect"];
+v142 -> v143 [label="ch_multiqc_files"];
+
+v143 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="collect"];
+v149 [label="MULTIQC"];
+v143 -> v149;
+
+v144 [shape=point,label="",fixedsize=true,width=0.1];
+v149 [label="MULTIQC"];
+v144 -> v149 [label="multiqc_config"];
+
+v145 [shape=point,label="",fixedsize=true,width=0.1];
+v149 [label="MULTIQC"];
+v145 -> v149 [label="extra_multiqc_config"];
+
+v146 [shape=point,label="",fixedsize=true,width=0.1];
+v149 [label="MULTIQC"];
+v146 -> v149 [label="multiqc_logo"];
+
+v147 [shape=point,label="",fixedsize=true,width=0.1];
+v149 [label="MULTIQC"];
+v147 -> v149 [label="replace_names"];
+
+v148 [shape=point,label="",fixedsize=true,width=0.1];
+v149 [label="MULTIQC"];
+v148 -> v149 [label="sample_names"];
+
+v149 [label="MULTIQC"];
+v152 [shape=point];
+v149 -> v152;
+
+v149 [label="MULTIQC"];
+v151 [shape=point];
+v149 -> v151;
+
+v149 [label="MULTIQC"];
+v150 [shape=point];
+v149 -> v150;
+
+v149 [label="MULTIQC"];
+v153 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v149 -> v153;
+
+v153 [shape=circle,label="",fixedsize=true,width=0.1,xlabel="mix"];
+v154 [shape=point];
+v153 -> v154 [label="ch_versions"];
+
+}

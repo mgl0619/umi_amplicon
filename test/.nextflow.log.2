@@ -1,0 +1,14 @@
+Oct-09 12:01:26.448 [main] DEBUG nextflow.cli.Launcher - $> nextflow run main.nf --input assets/samplesheet_real_test.csv --outdir results_real_conda_full -profile conda --skip_alignment --skip_feature_counting --umi_length 12 --umi_pattern NNNNNNNNNNNN --umi_method directional --umi_quality_threshold 10 --umi_collision_rate_threshold 0.1 --umi_diversity_threshold 1000 -resume -with-report results_real_conda_full/execution_report.html -with-timeline results_real_conda_full/execution_timeline.html -with-trace results_real_conda_full/execution_trace.txt -with-dag results_real_conda_full/pipeline_dag.svg
+Oct-09 12:01:26.489 [main] DEBUG nextflow.cli.CmdRun - N E X T F L O W  ~  version 24.10.5
+Oct-09 12:01:26.507 [main] DEBUG nextflow.plugin.PluginsFacade - Setting up plugin manager > mode=prod; embedded=false; plugins-dir=/Users/gangliu2001/.nextflow/plugins; core-plugins: nf-amazon@2.9.2,nf-azure@1.10.2,nf-cloudcache@0.4.2,nf-codecommit@0.2.2,nf-console@1.1.4,nf-google@1.15.4,nf-tower@1.9.3,nf-wave@1.7.4
+Oct-09 12:01:26.532 [main] INFO  o.pf4j.DefaultPluginStatusProvider - Enabled plugins: []
+Oct-09 12:01:26.532 [main] INFO  o.pf4j.DefaultPluginStatusProvider - Disabled plugins: []
+Oct-09 12:01:26.534 [main] INFO  org.pf4j.DefaultPluginManager - PF4J version 3.12.0 in 'deployment' mode
+Oct-09 12:01:26.542 [main] INFO  org.pf4j.AbstractPluginManager - No plugins
+Oct-09 12:01:26.550 [main] DEBUG nextflow.scm.ProviderConfig - Using SCM config path: /Users/gangliu2001/.nextflow/scm
+Oct-09 12:01:26.559 [main] DEBUG nextflow.cli.Launcher - Operation aborted
+nextflow.exception.AbortOperationException: Cannot find script file: main.nf
+	at nextflow.cli.CmdRun.getScriptFile(CmdRun.groovy:536)
+	at nextflow.cli.CmdRun.run(CmdRun.groovy:325)
+	at nextflow.cli.Launcher.run(Launcher.groovy:503)
+	at nextflow.cli.Launcher.main(Launcher.groovy:658)

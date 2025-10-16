@@ -1,0 +1,14 @@
+Oct-16 12:02:02.562 [main] DEBUG nextflow.cli.Launcher - $> nextflow run main.nf --input ../assets/samplesheet_real_test.csv --outdir test_corrected_workflow_results --fasta test_data/prame_tcr_2501_nnk_reference.fasta -profile mac --umi_length 12 --umi_pattern NNNNNNNNNNNN --umi_method directional --umi_quality_filter_threshold 10 --umi_collision_rate_threshold 0.1 --umi_diversity_threshold 1000 --merge_pairs -resume -with-report test_corrected_workflow_results/execution_report.html -with-timeline test_corrected_workflow_results/execution_timeline.html -with-dag test_corrected_workflow_results/pipeline_dag.pdf
+Oct-16 12:02:02.605 [main] DEBUG nextflow.cli.CmdRun - N E X T F L O W  ~  version 24.10.5
+Oct-16 12:02:02.625 [main] DEBUG nextflow.plugin.PluginsFacade - Setting up plugin manager > mode=prod; embedded=false; plugins-dir=/Users/gangliu2001/.nextflow/plugins; core-plugins: nf-amazon@2.9.2,nf-azure@1.10.2,nf-cloudcache@0.4.2,nf-codecommit@0.2.2,nf-console@1.1.4,nf-google@1.15.4,nf-tower@1.9.3,nf-wave@1.7.4
+Oct-16 12:02:02.652 [main] INFO  o.pf4j.DefaultPluginStatusProvider - Enabled plugins: []
+Oct-16 12:02:02.652 [main] INFO  o.pf4j.DefaultPluginStatusProvider - Disabled plugins: []
+Oct-16 12:02:02.654 [main] INFO  org.pf4j.DefaultPluginManager - PF4J version 3.12.0 in 'deployment' mode
+Oct-16 12:02:02.663 [main] INFO  org.pf4j.AbstractPluginManager - No plugins
+Oct-16 12:02:02.672 [main] DEBUG nextflow.scm.ProviderConfig - Using SCM config path: /Users/gangliu2001/.nextflow/scm
+Oct-16 12:02:02.681 [main] DEBUG nextflow.cli.Launcher - Operation aborted
+nextflow.exception.AbortOperationException: Cannot find script file: main.nf
+	at nextflow.cli.CmdRun.getScriptFile(CmdRun.groovy:536)
+	at nextflow.cli.CmdRun.run(CmdRun.groovy:325)
+	at nextflow.cli.Launcher.run(Launcher.groovy:503)
+	at nextflow.cli.Launcher.main(Launcher.groovy:658)
