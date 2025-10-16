@@ -39,28 +39,28 @@ The umi-amplicon pipeline performs the following steps:
    - **Critical**: NO 5' trimming to preserve UMI sequences
    - Baseline QC metrics
 
-2b. **FastQC** - Quality check after first filtering:
+3. **FastQC** - Quality check after first filtering:
    - Assess quality improvements from filtering
    - Verify 5' end integrity before UMI extraction
 
-3. **UMI Extraction** - Extract UMI sequences from filtered reads:
+4. **UMI Extraction** - Extract UMI sequences from filtered reads:
    - Pattern-based UMI extraction using `umi_tools extract`
    - UMI moved to read headers (safe from trimming)
    - Extraction statistics and logs
    - **Critical**: Uses output from FASTP Round 1 (5' end intact)
 
-4a. **FASTP Round 2** - Complete preprocessing with full trimming:
+5. **FASTP Round 2** - Complete preprocessing with full trimming:
    - Full 5' and 3' end trimming (UMIs now in headers)
    - Adapter trimming
    - Quality filtering
    - Read merging (for paired-end amplicon data, not implemented yet TODO: merge if high-merging rate)
    - Final quality statistics
 
-4b. **FastQC** - Quality check after full processing:
+6. **FastQC** - Quality check after full processing:
    - Verify final read quality before alignment
    - Assess impact of full trimming and merging
 
-5. **Pre-Deduplication UMI QC** - Comprehensive QC metrics on extracted UMIs:
+7. **Pre-Deduplication UMI QC** - Comprehensive QC metrics on extracted UMIs:
    - UMI diversity analysis (Shannon entropy, complexity score)
    - UMI collision rate estimation
    - UMI quality score analysis
@@ -68,20 +68,20 @@ The umi-amplicon pipeline performs the following steps:
    - Singleton rate calculation
    - UMI composition analysis
 
-6. **Alignment** - Map processed reads to reference genome:
+8. **Alignment** - Map processed reads to reference genome:
    - BWA-MEM alignment
    - Sorted BAM output with proper UMI tags
    - Alignment QC metrics (SAMTOOLS, Picard)
    - **Required for accurate UMI deduplication**
 
-7. **UMI Deduplication** - Remove PCR duplicates using UMI + genomic position:
+9. **UMI Deduplication** - Remove PCR duplicates using UMI + genomic position:
    - Performed on aligned BAM files using `umi_tools dedup`
    - Uses genomic coordinates + UMI for accurate deduplication
    - Directional network-based deduplication method
    - Error correction and UMI family grouping
    - Outputs deduplicated BAM files
 
-8a. **Post-Deduplication UMI QC** - Deduplication performance metrics:
+10. **Post-Deduplication UMI QC** - Deduplication performance metrics:
    - UMI family statistics (count, sizes, distribution)
    - Edit distance analysis between UMIs (error correction/clustering)
    - Deduplication rate and efficiency
@@ -90,7 +90,7 @@ The umi-amplicon pipeline performs the following steps:
    - Mean/median edit distance
    - Error correction rate
 
-8b. **UMI QC HTML Report** - Comprehensive interactive report:
+11. **UMI QC HTML Report** - Comprehensive interactive report:
    - **Single consolidated report** with pre- and post-dedup metrics
    - Interactive Plotly visualizations
    - Family size distribution charts
@@ -99,7 +99,7 @@ The umi-amplicon pipeline performs the following steps:
    - Automated quality assessment
    - Output: `umi_qc_postdedup/reports/sample.umi_postdedup_report.html`
 
-9. **MultiQC Report** - Comprehensive HTML report aggregating:
+12. **MultiQC Report** - Comprehensive HTML report aggregating:
    - All QC metrics from each step
    - Interactive visualizations
    - UMI diversity plots
