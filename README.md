@@ -2,12 +2,13 @@
 
 [![Nextflow](https://img.shields.io/badge/nextflow%20DSL2-%E2%89%A521.04.0-23aa62.svg)](https://www.nextflow.io/)
 [![run with docker](https://img.shields.io/badge/run%20with-docker-0db7ed?labelColor=000000&logo=docker)](https://www.docker.com/)
+[![run with conda](https://img.shields.io/badge/run%20with-conda-4CAF50?labelColor=000000&logo=conda-forge)](https://docs.conda.io/en/latest/)
 
 ## Introduction
 
 **umi-amplicon** is a bioinformatics best-practice analysis pipeline for UMI-tagged amplicon sequencing data.
 
-The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool to run tasks across multiple compute infrastructures in a very portable manner. It uses Docker containers making installation trivial and results highly reproducible. The [Nextflow DSL2](https://www.nextflow.io/docs/latest/dsl2.html) implementation of this pipeline uses one container per process which makes it much easier to maintain and update software dependencies. Where possible, these processes have been submitted to and installed from [nf-core/modules](https://github.com/nf-core/modules)!
+The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool to run tasks across multiple compute infrastructures in a very portable manner. It uses Docker containers and conda environments making installation trivial and results highly reproducible. The [Nextflow DSL2](https://www.nextflow.io/docs/latest/dsl2.html) implementation of this pipeline uses one container per process which makes it much easier to maintain and update software dependencies. Where possible, these processes have been submitted to and installed from [nf-core/modules](https://github.com/nf-core/modules)!
 
 On release, automated continuous integration tests run the pipeline on a full-sized dataset on the AWS cloud infrastructure. This ensures that the pipeline works on AWS, has sensible resource allocation defaults set to run on real-world datasets, and permits the persistent storage of results to be built into a standard structure. Results can be automatically transferred to various cloud providers.
 
@@ -15,45 +16,109 @@ On release, automated continuous integration tests run the pipeline on a full-si
 
 The umi-amplicon pipeline performs the following steps:
 
-1. **UMI Quality Control** - Comprehensive QC metrics including:
-   - UMI diversity analysis
-   - UMI collision rate calculation
-   - UMI quality score distribution
-   - UMI length distribution
+### Critical Workflow Design
+> **⚠️ Two-Round FASTP Strategy**: This pipeline uses a novel **two-round FASTP approach** to ensure UMI integrity:
+> 1. **First FASTP** (before UMI extraction): Adapter trimming, quality filtering, 3' trimming - but **NO 5' trimming** to preserve UMIs
+> 2. **UMI Extraction**: Extract intact UMIs from 5' end and move to read headers
+> 3. **Second FASTP** (after UMI extraction): Full trimming including 5' end, merging - UMIs are now safe in headers
+
+> **⚠️ UMI Design Assumption**: This pipeline assumes that **UMIs are present at the 5' end of Read 1**. For paired-end data, the UMI is extracted from Read 1 only. This is a common experimental design for amplicon sequencing where UMIs are incorporated during the first PCR primer.
+
+### Workflow Steps
+
+1. **FastQC** - Quality control of raw reads:
+   - Raw read quality assessment
+   - Adapter content detection
+   - Base quality distribution
+
+2. **FASTP Round 1** - Initial QC and filtering (preserves 5' UMIs):
+   - Adapter detection and trimming
+   - Quality filtering (removes poor quality reads)
+   - 3' end trimming only
+   - **Critical**: NO 5' trimming to preserve UMI sequences
+   - Baseline QC metrics
+
+2b. **FastQC** - Quality check after first filtering:
+   - Assess quality improvements from filtering
+   - Verify 5' end integrity before UMI extraction
+
+3. **UMI Extraction** - Extract UMI sequences from filtered reads:
+   - Pattern-based UMI extraction using `umi_tools extract`
+   - UMI moved to read headers (safe from trimming)
+   - Extraction statistics and logs
+   - **Critical**: Uses output from FASTP Round 1 (5' end intact)
+
+4. **FASTP Round 2** - Complete preprocessing with full trimming:
+   - Full 5' and 3' end trimming (UMIs now in headers)
+   - Adapter trimming
+   - Quality filtering
+   - Read merging (for paired-end amplicon data, not implemented yet TODO: merge if high-merging rate)
+   - Final quality statistics
+
+4b. **FastQC** - Quality check after full processing:
+   - Verify final read quality before alignment
+   - Assess impact of full trimming and merging
+
+5. **Pre-Deduplication UMI QC** - Comprehensive QC metrics on extracted UMIs:
+   - UMI diversity analysis (Shannon entropy, complexity score)
+   - UMI collision rate estimation
+   - UMI quality score analysis
+   - Family size distribution
+   - Singleton rate calculation
    - UMI composition analysis
 
-2. **UMI Extraction** - Extract UMI sequences from raw sequencing data:
-   - Pattern-based UMI extraction
-   - Quality-based filtering
-   - Extraction statistics
+6. **Alignment** - Map processed reads to reference genome:
+   - BWA-MEM alignment
+   - Sorted BAM output with proper UMI tags
+   - Alignment QC metrics (SAMTOOLS, Picard)
+   - **Required for accurate UMI deduplication**
 
-3. **UMI Deduplication** - Remove duplicate reads based on UMI sequences:
-   - Directional deduplication
-   - Quality threshold filtering
-   - Deduplication statistics
+7. **UMI Deduplication** - Remove PCR duplicates using UMI + genomic position:
+   - Performed on aligned BAM files using `umi_tools dedup`
+   - Uses genomic coordinates + UMI for accurate deduplication
+   - Directional network-based deduplication method
+   - Error correction and UMI family grouping
+   - Outputs deduplicated BAM files
 
-4. **UMI Analysis** - Advanced analysis of UMI sequences:
-   - UMI frequency distribution
-   - UMI network analysis
-   - UMI composition analysis
-   - Quality metrics
+8. **Post-Deduplication UMI QC** - Deduplication performance metrics:
+   - UMI family statistics (count, sizes, distribution)
+   - Edit distance analysis between UMIs (error correction/clustering)
+   - Deduplication rate and efficiency
+   - UMI clustering metrics
+   - Singleton family rate
+   - Mean/median edit distance
+   - Error correction rate
 
-5. **Report Generation** - Comprehensive HTML report with:
+8b. **UMI QC HTML Report** - Comprehensive interactive report:
+   - **Single consolidated report** with pre- and post-dedup metrics
+   - Interactive Plotly visualizations
+   - Family size distribution charts
+   - Edit distance distribution (UMI clustering)
+   - Deduplication summary gauges
+   - Automated quality assessment
+   - Output: `umi_qc_postdedup/reports/sample.umi_postdedup_report.html`
+
+9. **MultiQC Report** - Comprehensive HTML report aggregating:
+   - All QC metrics from each step
    - Interactive visualizations
-   - Quality control metrics
-   - Analysis results
-   - Summary statistics
+   - UMI diversity plots
+   - Deduplication statistics
+   - Alignment summaries
 
 ## Quick Start
 
 1. Install [`Nextflow`](https://www.nextflow.io/docs/latest/getstarted.html#installation) (`>=21.04.0`)
 
-2. Install [`Docker`](https://docs.docker.com/engine/installation/) for full pipeline reproducibility
+2. Install either [`Docker`](https://docs.docker.com/engine/installation/) or [`Conda`](https://docs.conda.io/en/latest/miniconda.html) for full pipeline reproducibility
 
 3. Download the pipeline and test it on a minimal dataset with a single command:
 
 ```bash
-nextflow run umi-amplicon -profile test,<docker/institutional> --outdir <OUTDIR>
+# Using Docker
+nextflow run umi-amplicon -profile test,docker --outdir <OUTDIR>
+
+# Using Conda
+nextflow run umi-amplicon -profile test,conda --outdir <OUTDIR>
 ```
 
 > Please check [nf-core/configs](https://github.com/nf-core/configs#documentation) to see if a custom config file to run nf-core pipelines already exists for your Institution. If so, you can simply use `-profile <institutional>` in your command. This will enable `docker` and set the appropriate execution settings for your local compute environment.
@@ -61,11 +126,23 @@ nextflow run umi-amplicon -profile test,<docker/institutional> --outdir <OUTDIR>
 4. Start running your own analysis!
 
 ```bash
+# Using Docker
 nextflow run umi-amplicon \
     --input samplesheet.csv \
     --outdir <OUTDIR> \
     --genome <GENOME> \
-    -profile <docker/institutional>
+    --umi_pattern NNNNNNNNNNNN
+    --umi_length 12
+    -profile docker
+
+# Using Conda
+nextflow run umi-amplicon \
+    --input samplesheet.csv \
+    --outdir <OUTDIR> \
+    --genome <GENOME> \
+    --umi_pattern NNNNNNNNNNNN
+    --umi_length 12
+    -profile conda
 ```
 
 ## Documentation
@@ -89,13 +166,21 @@ You can cite the `nf-core` publication as follows:
 
 ```mermaid
 graph TD
-    A[Raw Reads] --> B[UMI QC Metrics]
-    A --> C[UMI Extraction]
-    C --> D[UMI Deduplication]
-    D --> E[UMI Analysis]
-    B --> F[HTML Report]
-    E --> F
-    F --> G[Final Results]
+    A[Raw Reads] --> B[FastQC]
+    A --> C[FASTP - Merge & QC]
+    C --> D[UMI Extraction]
+    D --> E[Pre-Dedup UMI QC]
+    D --> F[Alignment - BWA-MEM]
+    F --> G[UMI Deduplication]
+    G --> H[Post-Dedup UMI QC]
+    G --> I[Feature Counting]
+    H --> J[UMI Analysis]
+    B --> K[MultiQC Report]
+    E --> K
+    H --> K
+    I --> K
+    J --> K
+    K --> L[Final Results]
 ```
 
 ## UMI Analysis Features
@@ -104,21 +189,17 @@ graph TD
 - **UMI Diversity**: Measures the uniqueness of UMI sequences
 - **Collision Rate**: Calculates the frequency of identical UMI sequences
 - **Quality Scores**: Analyzes the quality of UMI sequences
-- **Length Distribution**: Examines UMI length patterns
-- **Composition Analysis**: Studies base composition of UMI sequences
 
 ### Analysis Pipeline
 - **Pattern-based Extraction**: Flexible UMI pattern recognition
 - **Quality Filtering**: Removes low-quality UMI sequences
-- **Deduplication**: Removes duplicate reads based on UMI sequences
+- **Deduplication**: Removes duplicate reads based on UMI sequences and aligned genome coordiates 
 - **Network Analysis**: Identifies relationships between UMI sequences
 - **Statistical Analysis**: Comprehensive statistical metrics
 
 ### Visualization
 - **Interactive Plots**: Dynamic visualizations for exploration
 - **Quality Plots**: Visual representation of quality metrics
-- **Network Plots**: Graphical representation of UMI relationships
-- **Heatmaps**: Matrix visualization of UMI frequencies
 
 ## Parameters
 
@@ -128,16 +209,14 @@ graph TD
 
 ### UMI Parameters
 - `--umi_length`: Length of UMI sequences (default: 12)
-- `--umi_pattern`: Pattern for UMI extraction (default: NNNNNNNNNNNN)
+- `--umi_pattern`: Pattern for UMI extraction from Read 1 (default: NNNNNNNNNNNN)
+  - **Note**: UMIs are extracted from Read 1 only (or 5' end of merged reads)
+  - Use 'N' for random nucleotides in the UMI
+  - Example: `NNNNNNNNNNNN` for a 12bp random UMI
 - `--umi_method`: UMI extraction method (default: directional)
 - `--umi_quality_threshold`: Minimum quality score (default: 10)
 - `--umi_collision_rate_threshold`: Maximum collision rate (default: 0.1)
 - `--umi_diversity_threshold`: Minimum UMI diversity (default: 1000)
-
-### Analysis Parameters
-- `--skip_umi_qc`: Skip UMI quality control
-- `--skip_umi_analysis`: Skip UMI analysis
-- `--skip_report`: Skip HTML report generation
 
 ## Output
 

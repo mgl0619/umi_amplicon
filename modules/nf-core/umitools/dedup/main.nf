@@ -2,6 +2,7 @@ process UMITOOLS_DEDUP {
     tag "$meta.id"
     label "process_medium"
 
+    conda 'environment.yml'
     container 'quay.io/biocontainers/umi_tools:1.1.6--py311haab0aaa_0'
 
     input:

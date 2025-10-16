@@ -2,6 +2,7 @@ process FASTQC {
     tag "${meta.id}"
     label 'process_medium'
 
+    conda 'environment.yml'
     container 'quay.io/biocontainers/fastqc:0.12.1--hdfd78af_0'
 
     input:
@@ -19,7 +20,13 @@ process FASTQC {
     def args          = task.ext.args ?: ''
     def prefix        = task.ext.prefix ?: "${meta.id}"
     // Make list of old name and new name pairs to use for renaming in the bash while loop
-    def old_new_pairs = reads instanceof Path || reads.size() == 1 ? [[ reads, "${prefix}.${reads.extension}" ]] : reads.withIndex().collect { entry, index -> [ entry, "${prefix}_${index + 1}.${entry.extension}" ] }
+    // Handle double extensions like .fastq.gz properly
+    def old_new_pairs = reads instanceof Path || reads.size() == 1 ? 
+        [[ reads, "${prefix}.${reads.getName().endsWith('.fastq.gz') ? 'fastq.gz' : reads.getName().endsWith('.fq.gz') ? 'fq.gz' : reads.extension}" ]] : 
+        reads.withIndex().collect { entry, index -> 
+            def ext = entry.getName().endsWith('.fastq.gz') ? 'fastq.gz' : entry.getName().endsWith('.fq.gz') ? 'fq.gz' : entry.extension
+            [ entry, "${prefix}_${index + 1}.${ext}" ] 
+        }
     def rename_to     = old_new_pairs*.join(' ').join(' ')
     def renamed_files = old_new_pairs.collect{ _old_name, new_name -> new_name }.join(' ')
 

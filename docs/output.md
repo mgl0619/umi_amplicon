@@ -1,210 +1,350 @@
 # umi-amplicon: Output
 
-## Table of contents
-
-<!-- Install Atom plugin markdown-toc-auto for this ToC to auto-update on save -->
-<!-- toc -->
-- [Introduction](#introduction)
-- [Pipeline overview](#pipeline-overview)
-- [Output structure](#output-structure)
-- [UMI QC Metrics](#umi-qc-metrics)
-- [UMI Extraction](#umi-extraction)
-- [UMI Deduplication](#umi-deduplication)
-- [UMI Analysis](#umi-analysis)
-- [HTML Report](#html-report)
-- [MultiQC Report](#multiqc-report)
-- [Pipeline information](#pipeline-information)
-<!-- tocstop -->
-
 ## Introduction
 
-This document describes the output produced by the pipeline. Most of the plots are taken from the MultiQC report, which summarises results across all samples.
+This document describes the output produced by the pipeline. The output is organized in the following subdirectories:
 
-The directories listed below will be created in the results directory after the pipeline has finished. All paths are relative to the top-level results directory.
+## Pipeline Overview
 
-## Pipeline overview
+The pipeline follows bioinformatics best practices with a two-round FASTP strategy:
 
-The umi-amplicon pipeline is built using [Nextflow](https://www.nextflow.io)
-and processes data using the following steps:
+```
+Raw FASTQ 
+  ↓
+FastQC (raw) → FASTP_QC (no 5' trim) → FastQC (after QC)
+                         ↓
+                    UMI Extraction
+                         ↓
+              FASTP_TRIM (full trim) → FastQC (after trim)
+                         ↓
+            Pre-dedup UMI QC Metrics (text + JSON)
+                         ↓
+                    Alignment
+                         ↓
+                   Deduplication
+                         ↓
+            Post-dedup UMI QC Metrics (text + JSON)
+                         ↓
+          📊 UMI QC HTML Report (COMPREHENSIVE)
+                         ↓
+                     MultiQC
+```
 
-- [UMI QC Metrics](#umi-qc-metrics) - Quality control metrics for UMI sequences
-- [UMI Extraction](#umi-extraction) - Extract UMI sequences from raw data
-- [UMI Deduplication](#umi-deduplication) - Remove duplicate reads based on UMI sequences
-- [UMI Analysis](#umi-analysis) - Advanced analysis of UMI sequences
-- [HTML Report](#html-report) - Comprehensive HTML report with visualizations
+**Critical Workflow Features**:
+- **Two-round FASTP**: First round preserves 5' end (UMIs), second round does full trimming
+- **UMI extraction**: Happens between FASTP rounds after QC but before full trimming
+- **Multi-stage FastQC**: QC at 3 stages (raw, after first FASTP, after second FASTP)
+- **Single comprehensive HTML report**: Generated after post-deduplication with all metrics
 
-## Output structure
+## Output Directory Structure
 
 ```
 results/
-├── umi_qc/
-│   ├── sample1/
-│   │   ├── umi_qc_metrics.html
-│   │   ├── umi_qc_metrics.txt
-│   │   └── umi_qc_plots/
-│   └── sample2/
-│       ├── umi_qc_metrics.html
-│       ├── umi_qc_metrics.txt
-│       └── umi_qc_plots/
-├── umi_extract/
-│   ├── sample1/
-│   │   ├── extracted_R1.fastq.gz
-│   │   ├── extracted_R2.fastq.gz
-│   │   └── extraction_stats.txt
-│   └── sample2/
-│       ├── extracted_R1.fastq.gz
-│       ├── extracted_R2.fastq.gz
-│       └── extraction_stats.txt
-├── umi_dedup/
-│   ├── sample1/
-│   │   ├── deduped_R1.fastq.gz
-│   │   ├── deduped_R2.fastq.gz
-│   │   └── deduplication_stats.txt
-│   └── sample2/
-│       ├── deduped_R1.fastq.gz
-│       ├── deduped_R2.fastq.gz
-│       └── deduplication_stats.txt
-├── umi_analysis/
-│   ├── sample1/
-│   │   ├── umi_analysis.html
-│   │   ├── umi_analysis.txt
-│   │   └── umi_analysis_plots/
-│   └── sample2/
-│       ├── umi_analysis.html
-│       ├── umi_analysis.txt
-│       └── umi_analysis_plots/
-├── report/
-│   ├── umi_amplicon_report.html
-│   └── multiqc_report.html
-└── pipeline_info/
-    ├── execution_report.html
-    ├── execution_timeline.html
-    ├── execution_trace.txt
-    └── pipeline_dag.svg
+├── fastqc/                          # Quality control at multiple stages
+│   ├── raw/                        # FastQC on raw reads
+│   ├── after_fastp_qc/             # FastQC after first FASTP (no 5' trim)
+│   └── after_fastp_trim/           # FastQC after second FASTP (full trim)
+│
+├── fastp_qc/qc_only/               # First FASTP round (QC without 5' trim)
+│
+├── umitools/extract/               # UMI extraction outputs
+│
+├── fastp/                          # Second FASTP round (full trimming)
+│
+├── umi_qc/                         # Pre-deduplication UMI QC metrics
+│   ├── *.umi_qc_metrics.txt       # Text metrics
+│   └── *_multiqc.json              # MultiQC-compatible JSON
+│
+├── alignment/                      # BWA-MEM aligned BAM files
+│   ├── bam/                       # Sorted BAM files
+│   ├── samtools_stats/            # Alignment statistics
+│   ├── picard/                    # Picard QC metrics
+│   └── mosdepth/                  # Coverage statistics
+│
+├── umitools/dedup/                 # Deduplicated BAM files
+│
+├── umi_qc_postdedup/              # Post-deduplication UMI metrics
+│   ├── *.postdedup_qc.txt         # Text metrics
+│   ├── *.multiqc_data.json        # MultiQC-compatible JSON
+│   └── reports/
+│       └── *.umi_qc_report.html  ← 📊 COMPREHENSIVE HTML REPORT (Pre-dedup + Post-dedup)
+│
+├── multiqc/                        # Aggregated QC report
+└── pipeline_info/                  # Pipeline execution info
 ```
 
-## UMI QC Metrics
+## Detailed Output Description
 
-<details markdown="1">
-<summary>Output files</summary>
+### FastQC (Multi-Stage)
 
+**Output files:**
+- `fastqc/raw/`
+  - `*_raw_fastqc.html`: FastQC report on raw reads
+  - `*_raw_fastqc.zip`: Zip archive with raw read QC data
+  
+- `fastqc/after_fastp_qc/`
+  - `*_qc_fastqc.html`: FastQC report after first FASTP (QC round)
+  - `*_qc_fastqc.zip`: Zip archive with post-QC data
+  
+- `fastqc/after_fastp_trim/`
+  - `*_fastqc.html`: FastQC report after second FASTP (full trim)
+  - `*_fastqc.zip`: Zip archive with final QC data
+
+[FastQC](http://www.bioinformatics.babraham.ac.uk/projects/fastqc/) gives general quality metrics about your sequenced reads. The pipeline runs FastQC at **three critical stages**:
+
+1. **Raw reads**: Initial quality assessment before any processing
+2. **After FASTP_QC**: Quality after filtering and 3' trimming (5' preserved for UMIs)
+3. **After FASTP_TRIM**: Final quality after UMI extraction and full trimming
+
+This multi-stage QC allows you to track quality changes throughout the preprocessing steps.
+
+### UMI Extraction
+
+**Output files:**
+- `umitools/extract/`
+  - `*.umi_extract.fastq.gz`: FASTQ files with UMIs moved to read headers
+  - `*.umi_extract.log`: Log file with extraction statistics
+
+**Important**: UMI extraction is performed on raw reads BEFORE quality trimming to ensure UMI sequences are not removed or truncated.
+
+The extracted UMI is appended to the read ID in the format: `@READ_ID_UMI:SEQUENCE`
+
+### FASTP (Two-Round Strategy)
+
+**First Round - FASTP_QC (QC without 5' trimming):**
+- `fastp_qc/qc_only/`
+  - `*_qc.fastp.json`: QC metrics in JSON format
+  - `*_qc.fastp.html`: QC report
+  - `*_qc.fastp.log`: Processing log
+
+**Purpose**: Quality filtering, adapter trimming, and 3' end trimming WITHOUT touching the 5' end where UMIs are located.
+
+**Second Round - FASTP_TRIM (Full trimming after UMI extraction):**
+- `fastp/`
+  - `*.fastp.json`: Final QC metrics in JSON format
+  - `*.fastp.html`: Final QC report
+  - `*.merged.fastq.gz`: Merged reads (if --merge_pairs enabled)
+  - `*.fastp.log`: Processing log
+
+**Purpose**: Full quality trimming including 5' end (UMIs are now safely in read headers), plus optional read merging for amplicons.
+
+[FASTP](https://github.com/OpenGene/fastp) is used for quality control, adapter trimming, and read filtering. The **two-round strategy** ensures UMIs are preserved during initial QC but allows aggressive trimming after extraction.
+
+### Pre-Deduplication UMI QC
+
+**Output files:**
 - `umi_qc/`
-  - `{sample}/umi_qc_metrics.html` - HTML report with QC metrics
-  - `{sample}/umi_qc_metrics.txt` - Text file with QC metrics
-  - `{sample}/umi_qc_plots/` - Directory containing QC plots
+  - `*.umi_qc_metrics.txt`: Comprehensive UMI quality metrics (text format)
+  - `*_multiqc.json`: MultiQC-compatible JSON with plot data
 
-</details>
+**Note**: Text metrics only at this stage. The comprehensive HTML report is generated after post-deduplication.
 
-The UMI QC metrics provide comprehensive quality control information for UMI sequences:
+**Metrics include:**
+- **UMI Diversity**: Shannon entropy, complexity score, unique UMI count
+- **Collision Rate**: Estimated probability of UMI collisions
+- **Family Size Distribution**: Number of reads per UMI
+- **Quality Metrics**: Mean and minimum UMI quality scores
+- **Singleton Rate**: Percentage of UMIs with only one read
+- **Success Rate**: Percentage of UMIs passing quality filters
 
-- **UMI Diversity**: Measures the uniqueness of UMI sequences
-- **Collision Rate**: Calculates the frequency of identical UMI sequences
-- **Quality Scores**: Analyzes the quality of UMI sequences
-- **Length Distribution**: Examines UMI length patterns
-- **Composition Analysis**: Studies base composition of UMI sequences
+These metrics help assess:
+1. Whether the UMI library is sufficiently diverse
+2. If UMI quality is adequate for accurate deduplication
+3. Potential PCR bias (from family size distribution)
+4. Expected deduplication efficiency
 
-## UMI Extraction
+### Alignment
 
-<details markdown="1">
-<summary>Output files</summary>
+**Output files:**
+- `alignment/bam/`
+  - `*.sorted.bam`: Coordinate-sorted BAM files
+  - `*.sorted.bam.bai`: BAM index files
+- `alignment/samtools_stats/`
+  - `*.stats`: Comprehensive alignment statistics
+  - `*.flagstat`: Summary of alignment flags
+  - `*.idxstats`: Alignment counts per reference sequence
+- `alignment/picard/`
+  - `*.alignment_metrics.txt`: Detailed alignment summary
+  - `*.insert_size_metrics.txt`: Insert size distribution (paired-end only)
 
-- `umi_extract/`
-  - `{sample}/extracted_R1.fastq.gz` - Extracted R1 reads
-  - `{sample}/extracted_R2.fastq.gz` - Extracted R2 reads
-  - `{sample}/extraction_stats.txt` - Extraction statistics
+Alignment is required for accurate UMI deduplication using genomic coordinates.
 
-</details>
+### UMI Deduplication
 
-The UMI extraction step extracts UMI sequences from raw sequencing data:
+**Output files:**
+- `umitools/dedup/`
+  - `*.dedup.bam`: Deduplicated BAM files (one read per molecule)
+  - `*.dedup_stats.log`: Deduplication statistics
+  - `*_edit_distance.tsv`: Edit distance histogram between UMIs
+  - `*_per_umi.tsv`: Per-UMI statistics (counts, positions)
+  - `*_umi_per_position.tsv`: UMI usage per genomic position
 
-- **Pattern-based Extraction**: Flexible UMI pattern recognition
-- **Quality Filtering**: Removes low-quality UMI sequences
-- **Extraction Statistics**: Comprehensive statistics on extraction process
+[UMI-tools dedup](https://umi-tools.readthedocs.io/) uses a network-based method to group UMIs accounting for PCR errors, then selects one representative read per molecule based on quality scores.
 
-## UMI Deduplication
+### Post-Deduplication UMI QC & Comprehensive HTML Report
 
-<details markdown="1">
-<summary>Output files</summary>
+**Output files:**
+- `umi_qc_postdedup/`
+  - `*.postdedup_qc.txt`: Deduplication performance metrics (text format)
+  - `*.multiqc_data.json`: MultiQC-compatible statistics
+- `umi_qc_postdedup/reports/`
+  - `*.umi_qc_report.html`: **📊 Comprehensive interactive HTML report (Pre-dedup + Post-dedup)**
 
-- `umi_dedup/`
-  - `{sample}/deduped_R1.fastq.gz` - Deduplicated R1 reads
-  - `{sample}/deduped_R2.fastq.gz` - Deduplicated R2 reads
-  - `{sample}/deduplication_stats.txt` - Deduplication statistics
+#### Text Metrics (*.postdedup_qc.txt)
 
-</details>
+**Deduplication Summary:**
+- Total input reads
+- Deduplicated output reads
+- Duplicates removed
+- Deduplication rate (% duplicates removed)
+- Duplication rate (fold amplification)
 
-The UMI deduplication step removes duplicate reads based on UMI sequences:
+**UMI Family Statistics:**
+- Unique UMI families
+- Average family size
+- Median family size
+- Standard deviation of family size
+- Min/Max family size
+- Singleton families (UMIs with only 1 read)
+- Singleton family rate
 
-- **Directional Deduplication**: Removes duplicates using directional approach
-- **Quality Threshold Filtering**: Filters based on quality scores
-- **Deduplication Statistics**: Comprehensive statistics on deduplication process
+**UMI Error Correction & Clustering:**
+- UMI pairs compared
+- Mean edit distance between UMIs
+- Median edit distance
+- Maximum edit distance
+- UMI pairs clustered (≤1 edit distance)
+- Error correction rate (% of UMIs clustered due to sequencing errors)
 
-## UMI Analysis
+**Interpretation:**
+Automated quality assessment with warnings for:
+- ⚠ HIGH deduplication rate (>80%) - potential over-amplification
+- ⚠ LOW deduplication rate (<10%) - UMIs may not be effective
+- ⚠ HIGH singleton rate (>50%) - many UMIs seen only once
+- ⚠ HIGH error correction (>30%) - UMI sequencing errors or diversity issues
 
-<details markdown="1">
-<summary>Output files</summary>
+#### Interactive HTML Report (*.umi_qc_report.html)
 
-- `umi_analysis/`
-  - `{sample}/umi_analysis.html` - HTML report with analysis results
-  - `{sample}/umi_analysis.txt` - Text file with analysis results
-  - `{sample}/umi_analysis_plots/` - Directory containing analysis plots
+**This is the comprehensive HTML report with TWO sections:**
+- **Section 1:** Post-UMI Extraction Metrics (Before Deduplication)
+- **Section 2:** Post-Deduplication Metrics (After Deduplication)
 
-</details>
+**Section 1 includes:**
+1. **Summary Metrics Table** - 7 organized metric sections:
+   - Extraction Statistics (total reads, UMIs, unique UMIs, UMI length)
+   - UMI Diversity (diversity ratio, Shannon entropy, complexity score)
+   - UMI Collision Analysis (birthday problem calculations, expected vs observed rates)
+   - Family Size Statistics (mean, median, min, max, amplification ratio)
+   - Singleton Analysis (singleton count and rate)
+   - Quality Metrics (mean, min, max UMI quality)
+   - Performance Metrics (success rate)
 
-The UMI analysis step provides advanced analysis of UMI sequences:
+2. **Interactive Visualizations:**
+   - Per-position quality plot (mean with min-max range)
+   - Family size distribution histogram
+   - Top UMIs bar chart
+   - Collision analysis comparison chart
 
-- **UMI Frequency Distribution**: Analysis of UMI frequency patterns
-- **UMI Network Analysis**: Identifies relationships between UMI sequences
-- **UMI Composition Analysis**: Studies base composition of UMI sequences
-- **Quality Metrics**: Comprehensive quality metrics
+**Section 2 includes:**
+1. **Summary Metrics Table** - 3 organized sections:
+   - Deduplication Summary (total reads, deduplicated reads, deduplication rate)
+   - UMI Family Statistics (unique families, family sizes, singleton rate)
+   - UMI Error Correction & Clustering (edit distances, error correction rate)
 
-## HTML Report
+2. **Interactive Visualizations:**
+   - UMI family size distribution
+   - Top UMIs bar chart
+   - Per-position quality plot
 
-<details markdown="1">
-<summary>Output files</summary>
+3. **Recommendations** - Automated suggestions based on metrics
 
-- `report/umi_amplicon_report.html` - Comprehensive HTML report
+**Features:**
+- Interactive Plotly visualizations (hover for details, zoom, pan)
+- Responsive design for viewing on any device
+- Standalone HTML file (no external dependencies)
+- Professional formatting with clear section headers
+- Color-coded metrics (blue = normal, orange = warning, red = alert)
+- Consistent structure across text files, JSON, and HTML
 
-</details>
+These metrics help assess:
+1. Deduplication efficiency and molecular count accuracy
+2. PCR amplification bias
+3. UMI sequencing error rates
+4. Clustering effectiveness (error correction)
+5. Overall library complexity and coverage
 
-The HTML report provides a comprehensive overview of the analysis:
+### MultiQC
 
-- **Interactive Visualizations**: Dynamic visualizations for exploration
-- **Quality Plots**: Visual representation of quality metrics
-- **Network Plots**: Graphical representation of UMI relationships
-- **Heatmaps**: Matrix visualization of UMI frequencies
+**Output files:**
+- `multiqc/`
+  - `multiqc_report.html`: Standalone HTML file with all QC metrics
+  - `multiqc_data/`: Directory containing parsed data from all tools
 
-## MultiQC Report
+[MultiQC](http://multiqc.info) aggregates results from all pipeline steps into a single interactive report, including:
+- FastQC quality plots
+- FASTP preprocessing statistics
+- UMI diversity and quality metrics
+- Alignment summaries
+- Deduplication statistics
+- Coverage plots
 
-<details markdown="1">
-<summary>Output files</summary>
+### Pipeline Information
 
-- `report/multiqc_report.html` - MultiQC report
-
-</details>
-
-The MultiQC report aggregates results from all samples:
-
-- **Quality Control Summary**: Overview of QC metrics across all samples
-- **Sample Comparison**: Comparison of metrics between samples
-- **Interactive Plots**: Interactive visualizations for exploration
-
-## Pipeline information
-
-<details markdown="1">
-<summary>Output files</summary>
-
+**Output files:**
 - `pipeline_info/`
-  - `execution_report.html` - Nextflow execution report
-  - `execution_timeline.html` - Nextflow execution timeline
-  - `execution_trace.txt` - Nextflow execution trace
-  - `pipeline_dag.svg` - Pipeline DAG (Directed Acyclic Graph)
+  - `execution_report.html`: Nextflow execution report
+  - `execution_timeline.html`: Timeline of process execution
+  - `execution_trace.txt`: Trace file with resource usage
+  - `pipeline_dag.dot`: Pipeline workflow diagram
 
-</details>
+These files provide information about pipeline execution, resource usage, and can help with troubleshooting.
 
-The pipeline information provides details about the execution:
+## Key QC Metrics to Check
 
-- **Execution Report**: Detailed information about pipeline execution
-- **Timeline**: Timeline of pipeline execution
-- **Trace**: Detailed trace of pipeline execution
-- **DAG**: Visual representation of the pipeline workflow
+### 1. UMI Quality (Pre-Deduplication)
+- **Unique UMIs**: Should be high (>1000 for typical experiments)
+- **Collision Rate**: Should be low (<0.1)
+- **Mean UMI Quality**: Should be >20
+- **Complexity Score**: Should be >0.8 (indicates diverse UMI library)
+
+### 2. Alignment Quality
+- **Mapping Rate**: Should be >80% for good quality amplicon data
+- **Properly Paired**: Should be >95% for paired-end data
+- **Duplicates**: High rate expected before UMI deduplication
+
+### 3. Deduplication Efficiency
+- **Deduplication Rate**: Varies by experiment (typically 20-80%)
+- **Mean Family Size**: Indicates PCR amplification level
+- **Unique UMI Families**: Final molecular count
+
+## Interpretation Guide
+
+### Good UMI Experiment
+```
+✓ Unique UMIs: 5000+
+✓ Collision Rate: <0.05
+✓ Mean UMI Quality: >25
+✓ Deduplication Rate: 40-70%
+✓ Mapping Rate: >85%
+```
+
+### Warning Signs
+```
+⚠ Unique UMIs: <1000 (low diversity, may need more UMI length)
+⚠ Collision Rate: >0.15 (high collision risk)
+⚠ Mean UMI Quality: <15 (sequencing quality issue)
+⚠ Deduplication Rate: <10% (unexpected, check UMI extraction)
+⚠ Deduplication Rate: >95% (very high duplication, check protocol)
+```
+
+## Citations
+
+If you use umi-amplicon for your analysis, please cite:
+
+- **FastQC**: Andrews, S. (2010). FastQC: a quality control tool for high throughput sequence data.
+- **FASTP**: Chen, S., et al. (2018). fastp: an ultra-fast all-in-one FASTQ preprocessor. Bioinformatics, 34(17), i884-i890.
+- **UMI-tools**: Smith, T., et al. (2017). UMI-tools: modeling sequencing errors in Unique Molecular Identifiers to improve quantification accuracy. Genome Research, 27(3), 491-499.
+- **BWA**: Li, H. and Durbin, R. (2009) Fast and accurate short read alignment with Burrows-Wheeler Transform. Bioinformatics, 25:1754-60.
+- **SAMtools**: Li, H., et al. (2009). The Sequence Alignment/Map format and SAMtools. Bioinformatics, 25(16), 2078-2079.
+- **Picard**: Broad Institute. Picard Toolkit. http://broadinstitute.github.io/picard/
+- **MultiQC**: Ewels, P., et al. (2016). MultiQC: summarize analysis results for multiple tools and samples in a single report. Bioinformatics, 32(19), 3047-3048.

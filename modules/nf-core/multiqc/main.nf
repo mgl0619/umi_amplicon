@@ -1,6 +1,7 @@
 process MULTIQC {
     label 'process_single'
 
+    conda 'environment.yml'
     container 'community.wave.seqera.io/library/multiqc:1.31--1efbafd542a23882'
 
     input:

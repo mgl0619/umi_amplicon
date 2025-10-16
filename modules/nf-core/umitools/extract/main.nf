@@ -3,6 +3,7 @@ process UMITOOLS_EXTRACT {
     label "process_single"
     label "process_long"
 
+    conda "bioconda::umi_tools=1.1.5"
     container 'quay.io/biocontainers/umi_tools:1.1.6--py311haab0aaa_0'
 
     input:
@@ -26,7 +27,7 @@ process UMITOOLS_EXTRACT {
             -I $reads \\
             -S ${prefix}.umi_extract.fastq.gz \\
             $args \\
-            > ${prefix}.umi_extract.log
+            -L ${prefix}.umi_extract.log
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":
@@ -42,7 +43,7 @@ process UMITOOLS_EXTRACT {
             -S ${prefix}.umi_extract_1.fastq.gz \\
             --read2-out=${prefix}.umi_extract_2.fastq.gz \\
             $args \\
-            > ${prefix}.umi_extract.log
+            -L ${prefix}.umi_extract.log
 
         cat <<-END_VERSIONS > versions.yml
         "${task.process}":

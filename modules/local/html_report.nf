@@ -393,7 +393,7 @@ EOF
         "umi_length": "${params.umi_length}",
         "umi_pattern": "${params.umi_pattern}",
         "umi_method": "${params.umi_method}",
-        "umi_quality_threshold": "${params.umi_quality_threshold}",
+        "umi_quality_filter_threshold": "${params.umi_quality_filter_threshold}",
         "umi_collision_rate_threshold": "${params.umi_collision_rate_threshold}",
         "umi_diversity_threshold": "${params.umi_diversity_threshold}"
     },

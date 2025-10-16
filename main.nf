@@ -29,16 +29,12 @@ def helpMessage() {
         --fasta [file]                        Path to FASTA genome file
         --bwa_index [file]                    Path to BWA index files
         --gtf [file]                          Path to GTF annotation file
-        --skip_alignment                      Skip alignment step
-        --skip_feature_counting              Skip feature counting step
-        --umitools_path [str]                 Path to UMI-tools installation
         --umi_length [int]                    Length of UMI sequences (default: 12)
         --umi_pattern [str]                   Pattern for UMI extraction (default: NNNNNNNNNNNN)
         --umi_method [str]                    UMI extraction method: 'directional' or 'unique' (default: 'directional')
-        --umi_quality_threshold [int]         Minimum quality score for UMI bases (default: 10)
+        --umi_quality_filter_threshold [int]  Quality filter threshold for UMI extraction and QC (default: 15)
         --umi_collision_rate_threshold [float] Maximum acceptable collision rate (default: 0.1)
         --umi_diversity_threshold [int]        Minimum UMI diversity (default: 1000)
-        --umi_tool [str]                      UMI processing tool: 'umitools' or 'fgbio' (default: 'umitools')
         --group_strategy [str]                Grouping strategy for fgbio: 'paired' or 'single' (default: 'paired')
         --consensus_strategy [str]            Consensus strategy for fgbio: 'paired' or 'single' (default: 'paired')
         --min_reads [int]                     Minimum reads per UMI group (default: 1)
@@ -46,22 +42,18 @@ def helpMessage() {
         --error_rate_pre_umi [float]          Error rate pre-UMI for fgbio (default: 0.01)
         --max_edit_distance [int]             Maximum edit distance for filtering (default: 1)
         --min_base_quality [int]              Minimum base quality for filtering (default: 20)
-        --skip_umi_qc                         Skip UMI quality control metrics
-        --skip_umi_analysis                   Skip UMI analysis pipeline
-        --skip_report                         Skip HTML report generation
         --help                                Show this help message
         --version                             Show pipeline version
 
     Input samplesheet format:
-        sample,fastq_1,fastq_2,umi_1,umi_2
-        SAMPLE1,/path/to/sample1_R1.fastq.gz,/path/to/sample1_R2.fastq.gz,/path/to/sample1_UMI1.fastq.gz,/path/to/sample1_UMI2.fastq.gz
-        SAMPLE2,/path/to/sample2_R1.fastq.gz,/path/to/sample2_R2.fastq.gz,/path/to/sample2_UMI1.fastq.gz,/path/to/sample2_UMI2.fastq.gz
+        # Paired-end samples
+        sample,fastq_1,fastq_2
+        SAMPLE1,/path/to/sample1_R1.fastq.gz,/path/to/sample1_R2.fastq.gz
+        
+        # Single-end samples (fastq_2 can be empty or omitted)
+        sample,fastq_1,fastq_2
+        SAMPLE2,/path/to/sample2_R1.fastq.gz,
 
-    Citation:
-        If you use umi-amplicon for your analysis please cite it using the following doi: TBD
-
-    Pipeline documentation:
-        https://nf-co.re/umi-amplicon
     """.stripIndent()
 }
 
@@ -154,14 +146,12 @@ if (!file(params.outdir).canWrite()) {
 }
 
 // Set default parameters
-params.umitools_path = params.umitools_path ?: "umitools"
 params.umi_length = params.umi_length ?: 12
 params.umi_pattern = params.umi_pattern ?: "NNNNNNNNNNNN"
 params.umi_method = params.umi_method ?: "directional"
-params.umi_quality_threshold = params.umi_quality_threshold ?: 10
+params.umi_quality_filter_threshold = params.umi_quality_filter_threshold ?: 15
 params.umi_collision_rate_threshold = params.umi_collision_rate_threshold ?: 0.1
 params.umi_diversity_threshold = params.umi_diversity_threshold ?: 1000
-params.umi_tool = params.umi_tool ?: "umitools"
 params.group_strategy = params.group_strategy ?: "paired"
 params.consensus_strategy = params.consensus_strategy ?: "paired"
 params.min_reads = params.min_reads ?: 1
@@ -169,23 +159,18 @@ params.min_fraction = params.min_fraction ?: 0.5
 params.error_rate_pre_umi = params.error_rate_pre_umi ?: 0.01
 params.max_edit_distance = params.max_edit_distance ?: 1
 params.min_base_quality = params.min_base_quality ?: 20
-params.skip_umi_qc = params.skip_umi_qc ?: false
-params.skip_umi_analysis = params.skip_umi_analysis ?: false
-params.skip_report = params.skip_report ?: false
 
 // Print pipeline information
 log.info nfcoreHeader()
 log.info "Pipeline parameters:"
 log.info "  Input samplesheet: ${params.input}"
 log.info "  Output directory: ${params.outdir}"
-log.info "  UMI-tools path: ${params.umitools_path}"
 log.info "  UMI length: ${params.umi_length}"
 log.info "  UMI pattern: ${params.umi_pattern}"
 log.info "  UMI method: ${params.umi_method}"
-log.info "  UMI quality threshold: ${params.umi_quality_threshold}"
+log.info "  UMI quality filter threshold: ${params.umi_quality_filter_threshold}"
 log.info "  UMI collision rate threshold: ${params.umi_collision_rate_threshold}"
 log.info "  UMI diversity threshold: ${params.umi_diversity_threshold}"
-log.info "  UMI tool: ${params.umi_tool}"
 log.info "  Group strategy: ${params.group_strategy}"
 log.info "  Consensus strategy: ${params.consensus_strategy}"
 log.info "  Minimum reads: ${params.min_reads}"
@@ -193,9 +178,6 @@ log.info "  Minimum fraction: ${params.min_fraction}"
 log.info "  Error rate pre-UMI: ${params.error_rate_pre_umi}"
 log.info "  Maximum edit distance: ${params.max_edit_distance}"
 log.info "  Minimum base quality: ${params.min_base_quality}"
-log.info "  Skip UMI QC: ${params.skip_umi_qc}"
-log.info "  Skip UMI analysis: ${params.skip_umi_analysis}"
-log.info "  Skip report: ${params.skip_report}"
 
 // Load nf-core modules
 include { FASTQC } from './modules/nf-core/fastqc/main'
@@ -216,7 +198,11 @@ include { UMI_ANALYSIS_SUBWORKFLOW } from './subworkflows/local/umi_analysis'
 Channel
     .fromPath(params.input)
     .splitCsv(header: true, sep: ',')
-    .map { row -> [row.sample, row.fastq_1, row.fastq_2, row.umi_1, row.umi_2] }
+    .map { row -> 
+        def fastq_2 = row.fastq_2 ?: ''
+        def is_single_end = fastq_2 == '' || fastq_2 == null
+        [row.sample, row.fastq_1, fastq_2, is_single_end]
+    }
     .set { ch_samples }
 
 // Main workflow
@@ -230,15 +216,12 @@ workflow {
         params.fasta,
         params.bwa_index,
         params.gtf,
-        params.skip_alignment,
-        params.skip_feature_counting,
         params.umi_length,
         params.umi_pattern,
         params.umi_method,
-        params.umi_quality_threshold,
+        params.umi_quality_filter_threshold,
         params.umi_collision_rate_threshold,
         params.umi_diversity_threshold,
-        params.umi_tool,
         params.group_strategy,
         params.consensus_strategy,
         params.min_reads,
@@ -246,14 +229,22 @@ workflow {
         params.error_rate_pre_umi,
         params.max_edit_distance,
         params.min_base_quality,
-        params.skip_umi_qc,
-        params.skip_umi_analysis,
-        params.skip_report,
         params.outdir
     )
     
     ch_versions = ch_versions.mix(UMI_ANALYSIS_SUBWORKFLOW.out.versions)
     ch_multiqc_files = ch_multiqc_files.mix(UMI_ANALYSIS_SUBWORKFLOW.out.multiqc)
+    
+    // MultiQC report
+    MULTIQC (
+        ch_multiqc_files.collect(),
+        [],  // multiqc_config
+        [],  // extra_multiqc_config  
+        [],  // multiqc_logo
+        [],  // replace_names
+        []   // sample_names
+    )
+    ch_versions = ch_versions.mix(MULTIQC.out.versions)
 }
 
 // Workflow completion

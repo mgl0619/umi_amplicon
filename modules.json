@@ -20,6 +20,11 @@
             "git_sha": "41dfa3f7c0ffabb96a6a813fe321c6d1cc5b6e46",
             "installed_by": ["modules"]
           },
+          "fastp": {
+            "branch": "master",
+            "git_sha": "d9ec4ef289ad39b8a662a7a12be50409b11df84b",
+            "installed_by": ["modules"]
+          },
           "fastqc": {
             "branch": "master",
             "git_sha": "41dfa3f7c0ffabb96a6a813fe321c6d1cc5b6e46",
@@ -45,9 +50,24 @@
             "git_sha": "41dfa3f7c0ffabb96a6a813fe321c6d1cc5b6e46",
             "installed_by": ["modules"]
           },
+          "mosdepth": {
+            "branch": "master",
+            "git_sha": "2cd32e2448fb70ed1e1ab3143cee7dbdbede7271",
+            "installed_by": ["modules"]
+          },
           "multiqc": {
             "branch": "master",
             "git_sha": "e10b76ca0c66213581bec2833e30d31f239dec0b",
+            "installed_by": ["modules"]
+          },
+          "picard/collectalignmentsummarymetrics": {
+            "branch": "master",
+            "git_sha": "df124e87c74d8b40285199f8cc20151f5aa57255",
+            "installed_by": ["modules"]
+          },
+          "picard/collectinsertsizemetrics": {
+            "branch": "master",
+            "git_sha": "df124e87c74d8b40285199f8cc20151f5aa57255",
             "installed_by": ["modules"]
           },
           "samtools/flagstat": {

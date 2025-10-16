@@ -1,0 +1,218 @@
+# MultiQC Configuration for UMI Amplicon Pipeline
+
+# Report title
+title: "UMI Amplicon Analysis Report"
+
+# Report subtitle
+subtitle: "Comprehensive UMI-based amplicon sequencing analysis"
+
+# Report intro text
+intro_text: |
+  This report summarizes the results of UMI-based amplicon sequencing analysis,
+  including quality control, UMI statistics, alignment metrics, and deduplication results.
+
+# Custom data section order
+module_order:
+  - umi_qc:
+      name: "UMI Quality Control"
+      info: "Comprehensive UMI quality metrics and statistics"
+      path_filters:
+        - "*_multiqc_data.json"
+  - fastp
+  - fastqc
+  - bwa
+  - samtools
+  - picard
+  - mosdepth
+
+# Custom plots for UMI QC
+custom_data:
+  umi_qc_family_size:
+    id: 'umi_qc_family_size'
+    section_name: 'UMI Family Size Distribution'
+    description: 'Distribution of reads per UMI (family size)'
+    plot_type: 'linegraph'
+    pconfig:
+      id: 'umi_family_size_plot'
+      title: 'UMI Family Size Distribution'
+      xlab: 'Family Size (reads per UMI)'
+      ylab: 'Number of UMIs'
+      yLog: true
+      xLog: false
+  
+  umi_qc_top_umis:
+    id: 'umi_qc_top_umis'
+    section_name: 'Top 20 Most Abundant UMIs'
+    description: 'The 20 most frequently observed UMI sequences'
+    plot_type: 'bargraph'
+    pconfig:
+      id: 'umi_top_umis_plot'
+      title: 'Top 20 UMIs'
+      ylab: 'Read Count'
+      cpswitch_c_active: false
+  
+  umi_qc_quality:
+    id: 'umi_qc_quality'
+    section_name: 'UMI Quality by Position'
+    description: 'Average Phred quality score across UMI positions'
+    plot_type: 'linegraph'
+    pconfig:
+      id: 'umi_quality_plot'
+      title: 'UMI Quality by Position'
+      xlab: 'Position in UMI'
+      ylab: 'Mean Quality Score (Phred)'
+      ymin: 0
+      ymax: 42
+  
+  umi_qc_metrics:
+    id: 'umi_qc_custom'
+    section_name: 'UMI QC Metrics Table'
+    description: 'Detailed UMI quality control metrics'
+    plot_type: 'table'
+    pconfig:
+      id: 'umi_qc_table'
+      title: 'UMI Quality Metrics'
+      save_file: true
+      col1_header: 'Sample'
+    headers:
+      total_reads:
+        title: 'Total Reads'
+        description: 'Total number of sequencing reads'
+        format: '{:,.0f}'
+        scale: 'Greens'
+      total_umis:
+        title: 'Total UMIs'
+        description: 'Total UMI observations'
+        format: '{:,.0f}'
+        scale: 'Blues'
+      unique_umis:
+        title: 'Unique UMIs'
+        description: 'Number of distinct UMI sequences'
+        format: '{:,.0f}'
+        scale: 'Purples'
+      diversity_ratio:
+        title: 'Diversity Ratio'
+        description: 'Unique UMIs / Total UMIs'
+        format: '{:,.4f}'
+        scale: 'RdYlGn'
+        min: 0
+        max: 1
+      collision_rate:
+        title: 'Collision Rate'
+        description: 'Probability of UMI collisions'
+        format: '{:,.4f}'
+        scale: 'RdYlGn-rev'
+        min: 0
+        max: 1
+      mean_family_size:
+        title: 'Mean Family Size'
+        description: 'Average reads per UMI'
+        format: '{:,.2f}'
+        scale: 'Blues'
+      singleton_rate:
+        title: 'Singleton Rate'
+        description: 'Percentage of UMIs with only 1 read'
+        format: '{:,.4f}'
+        scale: 'Oranges'
+        min: 0
+        max: 1
+      amplification_ratio:
+        title: 'Amplification Ratio'
+        description: 'PCR amplification level'
+        format: '{:,.2f}'
+        scale: 'Reds'
+      mean_umi_quality:
+        title: 'Mean UMI Quality'
+        description: 'Average Phred quality score of UMI bases'
+        format: '{:,.2f}'
+        scale: 'RdYlGn'
+        min: 0
+        max: 40
+      success_rate:
+        title: 'Success Rate'
+        description: 'Percentage of UMIs passing filters'
+        format: '{:,.4f}'
+        scale: 'RdYlGn'
+        min: 0
+        max: 1
+      specificity:
+        title: 'Specificity'
+        description: 'Unique molecules / Total reads'
+        format: '{:,.4f}'
+        scale: 'RdYlGn'
+        min: 0
+        max: 1
+
+# Table columns to show in general stats
+table_columns_visible:
+  umi_qc:
+    unique_umis: True
+    diversity_ratio: True
+    mean_family_size: True
+    singleton_rate: True
+    mean_umi_quality: True
+    success_rate: True
+
+# Export plots
+export_plots: true
+
+# Report header info
+report_header_info:
+  - Pipeline: 'UMI Amplicon Analysis'
+  - Version: '1.0.0'
+  - Contact: 'Bioinformatics Team'
+
+# Custom logo (optional)
+# custom_logo: 'assets/logo.png'
+# custom_logo_url: 'https://your-institution.edu'
+# custom_logo_title: 'Your Institution'
+
+# Report styling
+table_cond_formatting_colours:
+  - blue: '#337ab7'
+  - lbue: '#5bc0de'
+  - pass: '#5cb85c'
+  - warn: '#f0ad4e'
+  - fail: '#d9534f'
+
+# Number formatting
+decimalPoint_format: '.'
+thousandsSep_format: ','
+
+# File search patterns
+sp:
+  umi_qc:
+    fn: '*_multiqc_data.json'
+  umi_qc_html:
+    fn: '*_umi_qc_report.html'
+
+# Remove sections (if needed)
+# remove_sections:
+#   - fastqc_sequence_counts
+
+# Sample name cleaning
+fn_clean_exts:
+  - '.umi_extract'
+  - '.dedup'
+  - '.sorted'
+  - '.bam'
+  - '.fastq'
+  - '.fq'
+  - '.gz'
+
+# Extra info for report
+extra_fn_clean_exts:
+  - '_R1'
+  - '_R2'
+  - '_001'
+
+# Show analysis paths
+show_analysis_paths: False
+show_analysis_time: True
+
+# Data format precision
+num_datasets_plot_limit: 50
+
+# Custom CSS (optional)
+# custom_css_files:
+#   - 'assets/custom.css'

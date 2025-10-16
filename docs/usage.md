@@ -160,22 +160,20 @@ The samplesheet can have as many columns as you desire, but there is a strict re
 A final samplesheet file consisting of both single- and paired-end data may look something like the one below. This is for 6 samples, where `TREATMENT_REP1` has 2 replicates and `TREATMENT_REP3` has 2 replicates (you can also see the other columns that can be supplied):
 
 ```csv
-sample,fastq_1,fastq_2,umi_1,umi_2
-CONTROL_REP1,AEG588A1_S1_L002_R1_001.fastq.gz,AEG588A1_S1_L002_R2_001.fastq.gz,AEG588A1_S1_L002_UMI1_001.fastq.gz,AEG588A1_S1_L002_UMI2_001.fastq.gz
-CONTROL_REP2,AEG588A2_S2_L002_R1_001.fastq.gz,AEG588A2_S2_L002_R2_001.fastq.gz,AEG588A2_S2_L002_UMI1_001.fastq.gz,AEG588A2_S2_L002_UMI2_001.fastq.gz
-CONTROL_REP3,AEG588A3_S3_L002_R1_001.fastq.gz,AEG588A3_S3_L002_R2_001.fastq.gz,AEG588A3_S3_L002_UMI1_001.fastq.gz,AEG588A3_S3_L002_UMI2_001.fastq.gz
-TREATMENT_REP1,AEG588A4_S4_L002_R1_001.fastq.gz,AEG588A4_S4_L002_R2_001.fastq.gz,AEG588A4_S4_L002_UMI1_001.fastq.gz,AEG588A4_S4_L002_UMI2_001.fastq.gz
-TREATMENT_REP2,AEG588A5_S5_L002_R1_001.fastq.gz,AEG588A5_S5_L002_R2_001.fastq.gz,AEG588A5_S5_L002_UMI1_001.fastq.gz,AEG588A5_S5_L002_UMI2_001.fastq.gz
-TREATMENT_REP3,AEG588A6_S6_L002_R1_001.fastq.gz,AEG588A6_S6_L002_R2_001.fastq.gz,AEG588A6_S6_L002_UMI1_001.fastq.gz,AEG588A6_S6_L002_UMI2_001.fastq.gz
+sample,fastq_1,fastq_2
+CONTROL_REP1,AEG588A1_S1_L002_R1_001.fastq.gz,AEG588A1_S1_L002_R2_001.fastq.gz
+CONTROL_REP2,AEG588A2_S2_L002_R1_001.fastq.gz,AEG588A2_S2_L002_R2_001.fastq.gz
+CONTROL_REP3,AEG588A3_S3_L002_R1_001.fastq.gz,
+TREATMENT_REP1,AEG588A4_S4_L002_R1_001.fastq.gz,AEG588A4_S4_L002_R2_001.fastq.gz
+TREATMENT_REP2,AEG588A5_S5_L002_R1_001.fastq.gz,
+TREATMENT_REP3,AEG588A6_S6_L002_R1_001.fastq.gz,AEG588A6_S6_L002_R2_001.fastq.gz
 ```
 
 | Column | Description |
 |--------|-------------|
 | `sample` | Custom sample name. This entry will be identical for multiple sequencing libraries/runs from the same sample. Spaces in sample names are automatically converted to underscores (`_`). |
 | `fastq_1` | Full path to FastQ file for Illumina short reads 1. File has to be gzipped and have the extension `.fastq.gz` or `.fq.gz`. |
-| `fastq_2` | Full path to FastQ file for Illumina short reads 2. File has to be gzipped and have the extension `.fastq.gz` or `.fq.gz`. |
-| `umi_1` | Full path to UMI file for Illumina short reads 1. File has to be gzipped and have the extension `.fastq.gz` or `.fq.gz`. |
-| `umi_2` | Full path to UMI file for Illumina short reads 2. File has to be gzipped and have the extension `.fastq.gz` or `.fq.gz`. |
+| `fastq_2` | Full path to FastQ file for Illumina short reads 2. File has to be gzipped and have the extension `.fastq.gz` or `.fq.gz`. For single-end samples, this can be empty. |
 
 An [example samplesheet](../assets/samplesheet.csv) has been provided with the pipeline.
 
