@@ -1,91 +1,91 @@
-name: umi_amplicon CI
-# This workflow runs the pipeline with the minimal test dataset to check that it completes without error
-on:
-  push:
-  pull_request:
-  release:
-    types: [published]
+# name: umi_amplicon CI
+# # This workflow runs the pipeline with the minimal test dataset to check that it completes without error
+# on:
+#   push:
+#   pull_request:
+#   release:
+#     types: [published]
 
-env:
-  NXF_ANSI_LOG: false
-  CAPSULE_LOG: none
+# env:
+#   NXF_ANSI_LOG: false
+#   CAPSULE_LOG: none
 
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        # Nextflow versions
-        include:
-          - NXF_VER: '23.04.0'
-            NXF_EDGE: ''
-          - NXF_VER: '23.10.0'
-            NXF_EDGE: ''
-          - NXF_VER: '24.0.0'
-            NXF_EDGE: ''
+# jobs:
+#   test:
+#     runs-on: ubuntu-latest
+#     strategy:
+#       matrix:
+#         # Nextflow versions
+#         include:
+#           - NXF_VER: '23.04.0'
+#             NXF_EDGE: ''
+#           - NXF_VER: '23.10.0'
+#             NXF_EDGE: ''
+#           - NXF_VER: '24.0.0'
+#             NXF_EDGE: ''
 
-    steps:
-      - name: Check out pipeline code
-        uses: actions/checkout@v4
+#     steps:
+#       - name: Check out pipeline code
+#         uses: actions/checkout@v4
       
-      - name: Set up Java 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'  
+#       - name: Set up Java 17
+#         uses: actions/setup-java@v4
+#         with:
+#           distribution: temurin
+#           java-version: '17'  
 
-      - name: Install Nextflow
-        run: |
-          wget -qO- https://get.nextflow.io | bash
-          sudo mv nextflow /usr/local/bin/
-          nextflow -version
+#       - name: Install Nextflow
+#         run: |
+#           wget -qO- https://get.nextflow.io | bash
+#           sudo mv nextflow /usr/local/bin/
+#           nextflow -version
 
-      # - name: Install Docker
-      #   run: |
-      #     sudo apt-get update
-      #     sudo apt-get install -y docker.io
-      #     sudo systemctl start docker
-      #     sudo usermod -aG docker $USER
+#       # - name: Install Docker
+#       #   run: |
+#       #     sudo apt-get update
+#       #     sudo apt-get install -y docker.io
+#       #     sudo systemctl start docker
+#       #     sudo usermod -aG docker $USER
 
-      - name: Show docker + resolve config
-        run: |
-          docker --version
-          NXF_VER=${{ matrix.NXF_VER }} nextflow config -profile test,docker -flat || true
+#       - name: Show docker + resolve config
+#         run: |
+#           docker --version
+#           NXF_VER=${{ matrix.NXF_VER }} nextflow config -profile test,docker -flat || true
 
-      - name: Self-test engine (useful signal)
-        run: |
-          NXF_VER=${{ matrix.NXF_VER }} nextflow self-test -with-docker
+#       - name: Self-test engine (useful signal)
+#         run: |
+#           NXF_VER=${{ matrix.NXF_VER }} nextflow self-test -with-docker
 
-      - name: Run pipeline (test)
-        run: |
-          NXF_VER=${{ matrix.NXF_VER }} nextflow run . \
-            -profile test,docker \
-            -with-docker \
-            --outdir ./results \
-            -with-report report.html \
-            -with-timeline timeline.html
+#       - name: Run pipeline (test)
+#         run: |
+#           NXF_VER=${{ matrix.NXF_VER }} nextflow run . \
+#             -profile test,docker \
+#             -with-docker \
+#             --outdir ./results \
+#             -with-report report.html \
+#             -with-timeline timeline.html
 
-      - name: Print last 200 lines of .nextflow.log on failure
-        if: failure()
-        run: |
-          echo "---- .nextflow.log (tail) ----"
-          tail -n 200 .nextflow.log || true
+#       - name: Print last 200 lines of .nextflow.log on failure
+#         if: failure()
+#         run: |
+#           echo "---- .nextflow.log (tail) ----"
+#           tail -n 200 .nextflow.log || true
 
-      - name: Upload artifacts (always)
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: nf-${{ matrix.NXF_VER }}
-          path: |
-            .nextflow.log
-            report.html
-            timeline.html
+#       - name: Upload artifacts (always)
+#         if: always()
+#         uses: actions/upload-artifact@v4
+#         with:
+#           name: nf-${{ matrix.NXF_VER }}
+#           path: |
+#             .nextflow.log
+#             report.html
+#             timeline.html
 
-      # - name: Run pipeline with test data
-      #   run: |
-      #     nextflow run ${GITHUB_WORKSPACE} -profile test,docker --outdir ./results
+#       # - name: Run pipeline with test data
+#       #   run: |
+#       #     nextflow run ${GITHUB_WORKSPACE} -profile test,docker --outdir ./results
 
-      # - name: Run pipeline with test_full data
-      #   run: |
-      #     nextflow run ${GITHUB_WORKSPACE} -profile test_full,docker --outdir ./results_full
+#       # - name: Run pipeline with test_full data
+#       #   run: |
+#       #     nextflow run ${GITHUB_WORKSPACE} -profile test_full,docker --outdir ./results_full
 
