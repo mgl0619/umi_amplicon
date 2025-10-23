@@ -201,6 +201,32 @@ Channel
     .map { row -> 
         def fastq_2 = row.fastq_2 ?: ''
         def is_single_end = fastq_2 == '' || fastq_2 == null
+        
+        // Validate and output file information
+        log.info "Processing sample: ${row.sample}"
+        log.info "  Read 1: ${row.fastq_1}"
+        
+        // Validate R1 exists
+        if (!file(row.fastq_1).exists()) {
+            log.error "ERROR: Read 1 file does not exist: ${row.fastq_1}"
+            exit 1
+        }
+        log.info "  ✓ Read 1 file exists (${file(row.fastq_1).size()} bytes)"
+        
+        // Validate R2 if paired-end
+        if (!is_single_end) {
+            log.info "  Read 2: ${fastq_2}"
+            if (!file(fastq_2).exists()) {
+                log.error "ERROR: Read 2 file does not exist: ${fastq_2}"
+                exit 1
+            }
+            log.info "  ✓ Read 2 file exists (${file(fastq_2).size()} bytes)"
+            log.info "  Mode: Paired-end"
+        } else {
+            log.info "  Mode: Single-end"
+        }
+        log.info ""
+        
         [row.sample, row.fastq_1, fastq_2, is_single_end]
     }
     .set { ch_samples }
