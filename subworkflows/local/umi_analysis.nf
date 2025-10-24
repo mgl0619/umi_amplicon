@@ -37,6 +37,9 @@ include { UMITOOLS_DEDUP } from '../../modules/nf-core/umitools/dedup/main'
 // include { FGBIO_GROUPREADSBYUMI } from '../../modules/nf-core/fgbio/groupreadsbyumi/main'
 // include { FGBIO_CALLMOLECULARCONSENSUSREADS } from '../../modules/nf-core/fgbio/callmolecularconsensusreads/main'
 
+// Load UMI grouping module
+include { UMITOOLS_GROUP } from '../../modules/nf-core/umitools/group/main'
+
 // Load custom modules (for functionality not available in nf-core)
 include { EXTRACT_UMI_QUALITY } from '../../modules/local/extract_umi_quality'
 include { UMI_QC_METRICS_POSTUMIEXTRACT } from '../../modules/local/umi_qc_metrics_postumiextract'
@@ -334,10 +337,19 @@ workflow UMI_ANALYSIS_SUBWORKFLOW {
         log.info "INFO: Skipping mosdepth on macOS due to conda package availability"
     }
     
-    // Combine BAM and BAI for deduplication
+    // Combine BAM and BAI for grouping and deduplication
     ch_bam_bai = BWA_MEM.out.bam
         .join(SAMTOOLS_INDEX.out.bai, by: 0)
         .map { meta, bam, bai -> [meta, bam, bai] }
+    
+    // UMI Grouping - inspect UMI groups before deduplication
+    // Creates grouped BAM and groups.tsv for inspection
+    UMITOOLS_GROUP (
+        ch_bam_bai,
+        true,  // create_bam - output grouped BAM file
+        true   // get_group_info - output groups.tsv file
+    )
+    ch_versions = ch_versions.mix(UMITOOLS_GROUP.out.versions)
     
     // UMI Deduplication on aligned BAM files using umi-tools
     UMITOOLS_DEDUP (
@@ -432,6 +444,9 @@ workflow UMI_ANALYSIS_SUBWORKFLOW {
     extracted = UMITOOLS_EXTRACT.out.reads
     processed = ch_processed_reads
     aligned = BWA_MEM.out.bam
+    grouped_bam = UMITOOLS_GROUP.out.bam
+    groups_tsv = UMITOOLS_GROUP.out.tsv
+    group_log = UMITOOLS_GROUP.out.log
     deduped = UMITOOLS_DEDUP.out.bam
     feature_counts = gtf ? SUBREAD_FEATURECOUNTS.out.counts : Channel.empty()
     library_coverage = gtf ? LIBRARY_COVERAGE.out.coverage : Channel.empty()

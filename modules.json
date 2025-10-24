@@ -119,6 +119,11 @@
             "git_sha": "c8be52dba1166c678e74cda9c3a3c221635c8bb1",
             "installed_by": ["modules"]
           },
+          "umitools/group": {
+            "branch": "master",
+            "git_sha": "c8be52dba1166c678e74cda9c3a3c221635c8bb1",
+            "installed_by": ["modules"]
+          },
           "umitools/prepareforrsem": {
             "branch": "master",
             "git_sha": "c8be52dba1166c678e74cda9c3a3c221635c8bb1",
