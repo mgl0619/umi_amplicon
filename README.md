@@ -74,14 +74,20 @@ The umi-amplicon pipeline performs the following steps:
    - Alignment QC metrics (SAMTOOLS, Picard)
    - **Required for accurate UMI deduplication**
 
-9. **UMI Deduplication** - Remove PCR duplicates using UMI + genomic position:
+9. **UMI Grouping** - Inspect UMI groups before deduplication:
+   - Groups reads by UMI and genomic position using `umi_tools group`
+   - Outputs grouped BAM file with group tags
+   - Generates groups.tsv file showing UMI groupings
+   - **For inspection and QC purposes** - helps understand UMI clustering
+
+10. **UMI Deduplication** - Remove PCR duplicates using UMI + genomic position:
    - Performed on aligned BAM files using `umi_tools dedup`
    - Uses genomic coordinates + UMI for accurate deduplication
    - Directional network-based deduplication method
    - Error correction and UMI family grouping
    - Outputs deduplicated BAM files
 
-10. **Post-Deduplication UMI QC** - Deduplication performance metrics:
+11. **Post-Deduplication UMI QC** - Deduplication performance metrics:
    - UMI family statistics (count, sizes, distribution)
    - Edit distance analysis between UMIs (error correction/clustering)
    - Deduplication rate and efficiency
@@ -90,7 +96,25 @@ The umi-amplicon pipeline performs the following steps:
    - Mean/median edit distance
    - Error correction rate
 
-11. **UMI QC HTML Report** - Comprehensive interactive report:
+12. **Feature Counting** - Count reads per amplicon/feature:
+   - Uses `featureCounts` from Subread package
+   - Counts deduplicated reads mapping to each feature
+   - Generates count matrix for downstream analysis
+
+13. **Library Coverage Analysis** - Comprehensive coverage metrics:
+   - Calculates library coverage (% of reference sequences detected)
+   - **Evenness metrics**:
+     - Shannon entropy - diversity measure
+     - Simpson index - probability two random reads are from different features
+     - Pielou's evenness - uniformity of distribution
+     - Gini coefficient - inequality measure
+   - **Distribution analysis**:
+     - Count distribution plots (histogram, cumulative)
+     - Top features visualization
+     - Summary statistics
+   - Outputs: text report, JSON for MultiQC, PNG plots
+
+14. **UMI QC HTML Report** - Comprehensive interactive report:
    - **Single consolidated report** with pre- and post-dedup metrics
    - Interactive Plotly visualizations
    - Family size distribution charts
@@ -99,12 +123,13 @@ The umi-amplicon pipeline performs the following steps:
    - Automated quality assessment
    - Output: `umi_qc_postdedup/reports/sample.umi_postdedup_report.html`
 
-12. **MultiQC Report** - Comprehensive HTML report aggregating:
+15. **MultiQC Report** - Comprehensive HTML report aggregating:
    - All QC metrics from each step
    - Interactive visualizations
    - UMI diversity plots
    - Deduplication statistics
    - Alignment summaries
+   - Library coverage metrics
 
 ## Quick Start
 
@@ -168,16 +193,19 @@ graph TD
     D --> E[Pre-Dedup UMI QC]
     D --> F[FASTP - Full Trimming]
     F --> G[Alignment - BWA-MEM]
-    G --> H[UMI Deduplication]
-    H --> I[Post-Dedup UMI QC]
-    I --> J[Feature Counting]
-    E --> K[UMI QC HTML Report]
-    I --> K[UMI QC HTML Report]
-    B --> L[MultiQC Report]
-    D --> L[MultiQC Report]
-    F --> L[MultiQC Report]
-    J --> L[MultiQC Report]
-    L --> M[Final Results]
+    G --> H[UMI Grouping]
+    H --> I[UMI Deduplication]
+    I --> J[Post-Dedup UMI QC]
+    J --> K[Feature Counting]
+    K --> L[Library Coverage Analysis]
+    E --> M[UMI QC HTML Report]
+    J --> M[UMI QC HTML Report]
+    B --> N[MultiQC Report]
+    D --> N[MultiQC Report]
+    F --> N[MultiQC Report]
+    K --> N[MultiQC Report]
+    L --> N[MultiQC Report]
+    N --> O[Final Results]
 ```
 
 ## UMI Analysis Features
@@ -219,12 +247,28 @@ graph TD
 
 The pipeline produces the following outputs:
 
+### Core Outputs
 - **UMI QC Metrics**: Quality control statistics and plots
 - **Extracted Sequences**: UMI-extracted sequencing data
 - **Deduplicated Data**: UMI-deduplicated sequencing data
 - **Analysis Results**: Comprehensive UMI analysis
 - **HTML Report**: Interactive report with visualizations
 - **MultiQC Report**: Quality control summary
+
+### New Analysis Outputs
+- **UMI Grouping Results**:
+  - `*_grouped.bam` - BAM file with UMI group tags for inspection
+  - `*_grouped.tsv` - TSV file showing which reads belong to which UMI groups
+  - `*_grouped.log` - Grouping process log
+  
+- **Library Coverage Analysis**:
+  - `*_library_coverage.txt` - Text report with coverage and evenness metrics
+  - `*_library_coverage.json` - JSON format for MultiQC integration
+  - `*_distribution.png` - 4-panel visualization:
+    - Count distribution histogram
+    - Cumulative distribution curve
+    - Top 20 features bar chart
+    - Summary statistics box
 
 ## Usage Examples
 
