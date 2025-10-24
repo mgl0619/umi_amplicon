@@ -240,13 +240,19 @@ graph TD
     H --> I[Pre-Dedup Variant Analysis]
     
     I --> J{Workflow Choice}
-    J -->|Default| K[umi_tools dedup]
-    J -->|High Accuracy| L[fgbio consensus]
-    J -->|Both Methods| M[Run Both in Parallel]
     
-    K --> N[Post-Dedup Variant Analysis]
-    L --> N
-    M --> N
+    J -->|Default: Fast| K[umi_tools dedup]
+    K --> K1[Select Best Read per UMI]
+    K1 --> N[Post-Dedup Variant Analysis]
+    
+    J -->|High Accuracy| L[fgbio GroupReadsByUmi]
+    L --> L1[fgbio CallMolecularConsensusReads]
+    L1 --> L2[Build Consensus Sequences]
+    L2 --> N
+    
+    J -->|Comparison Mode| M[Run Both Workflows]
+    M --> M1[umi_tools + fgbio in Parallel]
+    M1 --> N
     
     N --> O[Post-Dedup UMI QC]
     O --> P[Feature Counting]
@@ -264,6 +270,13 @@ graph TD
     Q --> S
     
     S --> T[Final Results]
+    
+    style K fill:#90EE90
+    style L fill:#87CEEB
+    style L1 fill:#87CEEB
+    style L2 fill:#87CEEB
+    style M fill:#FFD700
+    style M1 fill:#FFD700
 ```
 
 ## UMI Analysis Features
