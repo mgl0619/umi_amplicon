@@ -1,9 +1,0 @@
-name: umi-amplicon-minimal
-channels:
-  - bioconda
-  - conda-forge
-  - defaults
-dependencies:
-  - fastqc=0.12.1
-  - python=3.11
-
