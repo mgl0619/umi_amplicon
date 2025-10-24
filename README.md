@@ -141,13 +141,12 @@ The umi-amplicon pipeline performs the following steps:
 
 ```bash
 # Using Docker
-nextflow run umi-amplicon -profile test,docker --outdir <OUTDIR>
+nextflow run umi-amplicon -profile docker --outdir <OUTDIR>
 
 # Using Conda
-nextflow run umi-amplicon -profile test,conda --outdir <OUTDIR>
+nextflow run umi-amplicon -profile conda --outdir <OUTDIR>
 ```
 
-> Please check [nf-core/configs](https://github.com/nf-core/configs#documentation) to see if a custom config file to run nf-core pipelines already exists for your Institution. If so, you can simply use `-profile <institutional>` in your command. This will enable `docker` and set the appropriate execution settings for your local compute environment.
 
 4. Start running your own analysis!
 
@@ -156,7 +155,7 @@ nextflow run umi-amplicon -profile test,conda --outdir <OUTDIR>
 nextflow run umi-amplicon \
     --input samplesheet.csv \
     --outdir <OUTDIR> \
-    --genome <GENOME> \
+    --fasta <FASTA> \
     --umi_pattern NNNNNNNNNNNN
     --umi_length 12
     -profile docker
@@ -165,7 +164,7 @@ nextflow run umi-amplicon \
 nextflow run umi-amplicon \
     --input samplesheet.csv \
     --outdir <OUTDIR> \
-    --genome <GENOME> \
+    --fasta <FASTA> \
     --umi_pattern NNNNNNNNNNNN
     --umi_length 12
     -profile conda
@@ -276,6 +275,7 @@ The pipeline produces the following outputs:
 ```bash
 nextflow run umi-amplicon \
     --input samplesheet.csv \
+    --fasta <FASTA> \
     --outdir results/ \
     --umi_length 12 \
     --umi_pattern NNNNNNNNNNNN \
@@ -289,6 +289,7 @@ nextflow run umi-amplicon \
 ```bash
 nextflow run umi-amplicon \
     --input samplesheet.csv \
+    --fasta <FASTA> \
     --outdir results/ \
     -profile custom \
     -c custom.config
