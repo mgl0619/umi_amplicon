@@ -361,12 +361,28 @@ workflow UMI_ANALYSIS_SUBWORKFLOW {
     ch_versions = ch_versions.mix(UMI_VARIANT_ANALYSIS_PREDEDUP.out.versions)
     ch_multiqc_files = ch_multiqc_files.mix(UMI_VARIANT_ANALYSIS_PREDEDUP.out.multiqc.map { meta, json -> json })
     
-    // Choose between fgbio consensus or umi_tools dedup
-    if (params.use_fgbio_consensus) {
-        // ============================================================
-        // fgbio Consensus Workflow - Build consensus sequences
-        // ============================================================
+    // Run deduplication/consensus workflows based on parameters
+    // Can run both for comparison if run_both_methods = true
+    
+    // ============================================================
+    // umi_tools Deduplication Workflow
+    // ============================================================
+    if (!params.use_fgbio_consensus || params.run_both_methods) {
+        UMITOOLS_DEDUP (
+            ch_bam_bai,
+            true  // get_output_stats - generate deduplication statistics
+        )
+        ch_versions = ch_versions.mix(UMITOOLS_DEDUP.out.versions)
         
+        if (!params.use_fgbio_consensus) {
+            ch_final_bam = UMITOOLS_DEDUP.out.bam
+        }
+    }
+    
+    // ============================================================
+    // fgbio Consensus Workflow
+    // ============================================================
+    if (params.use_fgbio_consensus || params.run_both_methods) {
         // Step 1: Group reads by UMI
         FGBIO_GROUPREADSBYUMI (
             BWA_MEM.out.bam,
@@ -388,20 +404,19 @@ workflow UMI_ANALYSIS_SUBWORKFLOW {
         // Then re-align with BWA_MEM_CONSENSUS
         // For now, use consensus BAM directly (requires fgbio FilterConsensusReads)
         
-        ch_final_bam = FGBIO_CALLMOLECULARCONSENSUSREADS.out.bam
-        
-        log.warn "fgbio consensus workflow is experimental - consensus sequences need re-alignment"
-    } else {
-        // ============================================================
-        // umi_tools Deduplication Workflow (default)
-        // ============================================================
-        UMITOOLS_DEDUP (
-            ch_bam_bai,
-            true  // get_output_stats - generate deduplication statistics
-        )
-        ch_versions = ch_versions.mix(UMITOOLS_DEDUP.out.versions)
-        
+        if (params.use_fgbio_consensus && !params.run_both_methods) {
+            ch_final_bam = FGBIO_CALLMOLECULARCONSENSUSREADS.out.bam
+            log.warn "fgbio consensus workflow is experimental - consensus sequences need re-alignment"
+        }
+    }
+    
+    // If running both methods, use umi_tools for downstream by default
+    // Both outputs will be available in results directory
+    if (params.run_both_methods) {
         ch_final_bam = UMITOOLS_DEDUP.out.bam
+        log.info "Running BOTH umi_tools dedup and fgbio consensus for comparison"
+        log.info "Downstream analysis will use umi_tools dedup results"
+        log.info "fgbio consensus results available in separate output directory"
     }
     
     // Post-deduplication UMI QC metrics (only for umi_tools dedup)
