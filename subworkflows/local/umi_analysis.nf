@@ -42,6 +42,7 @@ include { EXTRACT_UMI_QUALITY } from '../../modules/local/extract_umi_quality'
 include { UMI_QC_METRICS_POSTUMIEXTRACT } from '../../modules/local/umi_qc_metrics_postumiextract'
 include { UMI_QC_METRICS_POSTDEDUP } from '../../modules/local/umi_qc_metrics_postdedup'
 include { UMI_QC_HTML_REPORT } from '../../modules/local/umi_qc_html_report'
+include { LIBRARY_COVERAGE } from '../../modules/local/library_coverage'
 
 // Note: fgbio modules are not available in nf-core modules yet
 // Using UMI-tools modules for UMI processing
@@ -401,6 +402,14 @@ workflow UMI_ANALYSIS_SUBWORKFLOW {
         )
         ch_versions = ch_versions.mix(SUBREAD_FEATURECOUNTS.out.versions)
         ch_multiqc_files = ch_multiqc_files.mix(SUBREAD_FEATURECOUNTS.out.summary)
+        
+        // Calculate library coverage from featureCounts output
+        LIBRARY_COVERAGE (
+            SUBREAD_FEATURECOUNTS.out.counts,
+            fasta
+        )
+        ch_versions = ch_versions.mix(LIBRARY_COVERAGE.out.versions)
+        ch_multiqc_files = ch_multiqc_files.mix(LIBRARY_COVERAGE.out.json.map { meta, json -> json })
     }
 
     // MultiQC Report - comprehensive report with all QC metrics
@@ -425,6 +434,7 @@ workflow UMI_ANALYSIS_SUBWORKFLOW {
     aligned = BWA_MEM.out.bam
     deduped = UMITOOLS_DEDUP.out.bam
     feature_counts = gtf ? SUBREAD_FEATURECOUNTS.out.counts : Channel.empty()
+    library_coverage = gtf ? LIBRARY_COVERAGE.out.coverage : Channel.empty()
     umi_html_report = UMI_QC_HTML_REPORT.out.html_report
     dedup_idxstats = SAMTOOLS_IDXSTATS_DEDUP.out.idxstats
 }
