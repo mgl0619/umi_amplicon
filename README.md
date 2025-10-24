@@ -6,9 +6,29 @@
 
 ## Introduction
 
-**umi-amplicon** is a bioinformatics best-practice analysis pipeline for UMI-tagged amplicon sequencing data.
+**umi-amplicon** is a comprehensive bioinformatics pipeline for UMI-tagged amplicon sequencing analysis with advanced quality control and flexible deduplication strategies.
 
-The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool to run tasks across multiple compute infrastructures in a very portable manner. It uses Docker containers and conda environments making installation trivial and results highly reproducible. The [Nextflow DSL2](https://www.nextflow.io/docs/latest/dsl2.html) implementation of this pipeline uses one container per process which makes it much easier to maintain and update software dependencies. Where possible, these processes have been submitted to and installed from [nf-core/modules](https://github.com/nf-core/modules)!
+### Key Features
+
+✨ **Dual Deduplication Workflows**
+- **umi_tools dedup** - Fast, standard deduplication (default)
+- **fgbio consensus** - High-accuracy consensus building
+- **Comparison mode** - Run both methods simultaneously for benchmarking
+
+🔬 **Advanced UMI Analysis**
+- **Variant Analysis** - Assess multi-variant UMIs (pre & post-dedup)
+- **Specificity Metrics** - Validate deduplication effectiveness
+- **Error Detection** - Identify sequencing errors vs UMI collisions
+
+📊 **Comprehensive QC**
+- **Library Coverage** - Coverage metrics with evenness analysis
+- **Interactive Reports** - HTML reports with Plotly visualizations
+- **MultiQC Integration** - Aggregated metrics from all steps
+
+🛠️ **Production-Ready**
+- Built with [Nextflow DSL2](https://www.nextflow.io/docs/latest/dsl2.html)
+- Docker/Conda support for reproducibility
+- Uses [nf-core modules](https://github.com/nf-core/modules) where possible
 
 ## TODO
    build nf-core test & ensure CI ready 
@@ -217,18 +237,33 @@ graph TD
     D --> F[FASTP - Full Trimming]
     F --> G[Alignment - BWA-MEM]
     G --> H[UMI Grouping]
-    H --> I[UMI Deduplication]
-    I --> J[Post-Dedup UMI QC]
-    J --> K[Feature Counting]
-    K --> L[Library Coverage Analysis]
-    E --> M[UMI QC HTML Report]
-    J --> M[UMI QC HTML Report]
-    B --> N[MultiQC Report]
-    D --> N[MultiQC Report]
-    F --> N[MultiQC Report]
-    K --> N[MultiQC Report]
-    L --> N[MultiQC Report]
-    N --> O[Final Results]
+    H --> I[Pre-Dedup Variant Analysis]
+    
+    I --> J{Workflow Choice}
+    J -->|Default| K[umi_tools dedup]
+    J -->|High Accuracy| L[fgbio consensus]
+    J -->|Both Methods| M[Run Both in Parallel]
+    
+    K --> N[Post-Dedup Variant Analysis]
+    L --> N
+    M --> N
+    
+    N --> O[Post-Dedup UMI QC]
+    O --> P[Feature Counting]
+    P --> Q[Library Coverage Analysis]
+    
+    E --> R[UMI QC HTML Report]
+    O --> R
+    
+    B --> S[MultiQC Report]
+    D --> S
+    F --> S
+    I --> S
+    N --> S
+    P --> S
+    Q --> S
+    
+    S --> T[Final Results]
 ```
 
 ## UMI Analysis Features
@@ -335,6 +370,20 @@ nextflow run umi-amplicon \
     -profile docker
 ```
 
+### Comparison Mode (Run Both Methods)
+```bash
+# Run BOTH umi_tools dedup AND fgbio consensus for benchmarking
+nextflow run umi-amplicon \
+    --input samplesheet.csv \
+    --fasta <FASTA> \
+    --outdir results/ \
+    --run_both_methods \
+    --fgbio_min_reads 3 \
+    --fgbio_min_baseq 30 \
+    -profile docker
+```
+**Note**: Both workflows run in parallel. Downstream analysis uses umi_tools results, but both outputs are saved for comparison.
+
 ### Custom Configuration
 ```bash
 nextflow run umi-amplicon \
@@ -344,6 +393,44 @@ nextflow run umi-amplicon \
     -profile custom \
     -c custom.config
 ```
+
+## Parameters
+
+### Required Parameters
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `--input` | Path to samplesheet CSV file | - |
+| `--fasta` | Path to reference genome FASTA | - |
+
+### UMI Parameters
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `--umi_length` | Length of UMI sequence | `12` |
+| `--umi_pattern` | UMI pattern (N = random base) | `NNNNNNNNNNNN` |
+| `--umi_method` | Deduplication method | `directional` |
+| `--umi_quality_filter_threshold` | Min quality for UMI bases | `15` |
+| `--umi_collision_rate_threshold` | Max acceptable collision rate | `0.1` |
+| `--umi_diversity_threshold` | Min unique UMIs expected | `1000` |
+
+### Workflow Selection Parameters
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `--use_fgbio_consensus` | Use fgbio consensus instead of umi_tools | `false` |
+| `--run_both_methods` | Run both umi_tools AND fgbio for comparison | `false` |
+
+### fgbio Consensus Parameters
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `--fgbio_group_strategy` | UMI grouping strategy (adjacency/identity/edit/paired) | `adjacency` |
+| `--fgbio_min_reads` | Minimum reads to form consensus | `1` |
+| `--fgbio_min_baseq` | Minimum base quality for consensus calling | `20` |
+
+### Optional Parameters
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `--gtf` | GTF annotation file for feature counting | - |
+| `--outdir` | Output directory | `./results` |
+| `--skip_mosdepth` | Skip coverage analysis | `false` |
 
 ## Troubleshooting
 
