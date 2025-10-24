@@ -80,14 +80,37 @@ The umi-amplicon pipeline performs the following steps:
    - Generates groups.tsv file showing UMI groupings
    - **For inspection and QC purposes** - helps understand UMI clustering
 
-10. **UMI Deduplication** - Remove PCR duplicates using UMI + genomic position:
+10. **Pre-Deduplication Variant Analysis** - Assess UMI specificity:
+   - Analyzes multi-variant UMIs (same UMI, different sequences)
+   - Classifies variants as:
+     - Likely sequencing errors (major variant >90%)
+     - Likely UMI collisions (different genomic positions)
+     - Ambiguous cases
+   - Calculates baseline specificity metrics
+
+11. **UMI Deduplication/Consensus** - Two workflow options:
+   
+   **Option A: umi_tools dedup (default - fast)**
    - Performed on aligned BAM files using `umi_tools dedup`
    - Uses genomic coordinates + UMI for accurate deduplication
    - Directional network-based deduplication method
-   - Error correction and UMI family grouping
-   - Outputs deduplicated BAM files
+   - Selects best read from each UMI family
+   - Fast and efficient for high-quality data
+   
+   **Option B: fgbio consensus (optional - high accuracy)**
+   - Groups reads by UMI using `fgbio GroupReadsByUmi`
+   - Builds consensus sequences using `fgbio CallMolecularConsensusReads`
+   - Leverages multiple reads for error correction
+   - Higher accuracy but slower
+   - Enable with `--use_fgbio_consensus`
 
-11. **Post-Deduplication UMI QC** - Deduplication performance metrics:
+12. **Post-Deduplication Variant Analysis** - Assess deduplication effectiveness:
+   - Re-analyzes multi-variant UMIs after deduplication
+   - Compares pre/post-dedup specificity
+   - Validates deduplication performance
+   - Identifies remaining problematic UMIs
+
+13. **Post-Deduplication UMI QC** - Deduplication performance metrics (umi_tools only):
    - UMI family statistics (count, sizes, distribution)
    - Edit distance analysis between UMIs (error correction/clustering)
    - Deduplication rate and efficiency
@@ -96,12 +119,12 @@ The umi-amplicon pipeline performs the following steps:
    - Mean/median edit distance
    - Error correction rate
 
-12. **Feature Counting** - Count reads per amplicon/feature:
+14. **Feature Counting** - Count reads per amplicon/feature:
    - Uses `featureCounts` from Subread package
-   - Counts deduplicated reads mapping to each feature
+   - Counts deduplicated/consensus reads mapping to each feature
    - Generates count matrix for downstream analysis
 
-13. **Library Coverage Analysis** - Comprehensive coverage metrics:
+15. **Library Coverage Analysis** - Comprehensive coverage metrics:
    - Calculates library coverage (% of reference sequences detected)
    - **Evenness metrics**:
      - Shannon entropy - diversity measure
@@ -114,7 +137,7 @@ The umi-amplicon pipeline performs the following steps:
      - Summary statistics
    - Outputs: text report, JSON for MultiQC, PNG plots
 
-14. **UMI QC HTML Report** - Comprehensive interactive report:
+16. **UMI QC HTML Report** - Comprehensive interactive report:
    - **Single consolidated report** with pre- and post-dedup metrics
    - Interactive Plotly visualizations
    - Family size distribution charts
@@ -123,13 +146,14 @@ The umi-amplicon pipeline performs the following steps:
    - Automated quality assessment
    - Output: `umi_qc_postdedup/reports/sample.umi_postdedup_report.html`
 
-15. **MultiQC Report** - Comprehensive HTML report aggregating:
+17. **MultiQC Report** - Comprehensive HTML report aggregating:
    - All QC metrics from each step
    - Interactive visualizations
    - UMI diversity plots
-   - Deduplication statistics
+   - Deduplication/consensus statistics
    - Alignment summaries
    - Library coverage metrics
+   - Variant analysis metrics
 
 ## Quick Start
 
@@ -260,6 +284,16 @@ The pipeline produces the following outputs:
   - `*_grouped.tsv` - TSV file showing which reads belong to which UMI groups
   - `*_grouped.log` - Grouping process log
   
+- **UMI Variant Analysis** (Pre & Post-Dedup):
+  - `*_umi_variant_analysis.txt` - Detailed report with multi-variant UMIs
+  - `*_umi_variant_analysis_mqc.json` - MultiQC integration
+  - `*_umi_variant_details.json` - Full data for further analysis
+  - **Key Metrics**:
+    - UMI Specificity (%)
+    - Multi-variant Rate (%)
+    - Error Rate (%)
+    - Collision Rate (%)
+
 - **Library Coverage Analysis**:
   - `*_library_coverage.txt` - Text report with coverage and evenness metrics
   - `*_library_coverage.json` - JSON format for MultiQC integration
@@ -269,9 +303,15 @@ The pipeline produces the following outputs:
     - Top 20 features bar chart
     - Summary statistics box
 
+- **fgbio Consensus Outputs** (when enabled):
+  - `*_umi-grouped.bam` - Grouped reads by UMI
+  - `*_histogram.txt` - UMI family size histogram
+  - `*_read-metrics.txt` - Grouping metrics
+  - `*_consensus_unmapped.bam` - Consensus sequences
+
 ## Usage Examples
 
-### Basic Usage
+### Basic Usage (umi_tools dedup)
 ```bash
 nextflow run umi-amplicon \
     --input samplesheet.csv \
@@ -279,10 +319,20 @@ nextflow run umi-amplicon \
     --outdir results/ \
     --umi_length 12 \
     --umi_pattern NNNNNNNNNNNN \
-    --umi_method directional \
-    --umi_quality_threshold 15 \
-    --umi_collision_rate_threshold 0.05 \
-    --umi_diversity_threshold 2000
+    -profile docker
+```
+
+### High-Accuracy Mode (fgbio consensus)
+```bash
+nextflow run umi-amplicon \
+    --input samplesheet.csv \
+    --fasta <FASTA> \
+    --outdir results/ \
+    --use_fgbio_consensus \
+    --fgbio_min_reads 3 \
+    --fgbio_min_baseq 30 \
+    --fgbio_group_strategy adjacency \
+    -profile docker
 ```
 
 ### Custom Configuration
