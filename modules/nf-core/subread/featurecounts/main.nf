@@ -5,7 +5,7 @@ process SUBREAD_FEATURECOUNTS {
     conda "${moduleDir}/environment.yml"
     container "${workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container
         ? 'https://depot.galaxyproject.org/singularity/subread:2.0.6--he4a0461_2'
-        : 'biocontainers/subread:2.0.6--he4a0461_2'}"
+        : 'quay.io/biocontainers/subread:2.0.6--he4a0461_2'}"
 
     input:
     tuple val(meta), path(bams), path(annotation)
