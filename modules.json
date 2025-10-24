@@ -70,6 +70,11 @@
             "git_sha": "df124e87c74d8b40285199f8cc20151f5aa57255",
             "installed_by": ["modules"]
           },
+          "samtools/fastq": {
+            "branch": "master",
+            "git_sha": "c8be52dba1166c678e74cda9c3a3c221635c8bb1",
+            "installed_by": ["modules"]
+          },
           "samtools/flagstat": {
             "branch": "master",
             "git_sha": "e334e12a1e985adc5ffc3fc78a68be1de711de45",

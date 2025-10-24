@@ -22,10 +22,12 @@ include { SUBREAD_FEATURECOUNTS } from '../../modules/nf-core/subread/featurecou
 // Load nf-core subworkflows and modules for BAM processing
 include { SAMTOOLS_INDEX } from '../../modules/nf-core/samtools/index/main'
 include { SAMTOOLS_INDEX as SAMTOOLS_INDEX_DEDUP } from '../../modules/nf-core/samtools/index/main'
+include { SAMTOOLS_INDEX as SAMTOOLS_INDEX_CONSENSUS } from '../../modules/nf-core/samtools/index/main'
 include { SAMTOOLS_STATS } from '../../modules/nf-core/samtools/stats/main'
 include { SAMTOOLS_FLAGSTAT } from '../../modules/nf-core/samtools/flagstat/main'
 include { SAMTOOLS_IDXSTATS } from '../../modules/nf-core/samtools/idxstats/main'
 include { SAMTOOLS_IDXSTATS as SAMTOOLS_IDXSTATS_DEDUP } from '../../modules/nf-core/samtools/idxstats/main'
+include { SAMTOOLS_FASTQ } from '../../modules/nf-core/samtools/fastq/main'
 include { PICARD_COLLECTALIGNMENTSUMMARYMETRICS } from '../../modules/nf-core/picard/collectalignmentsummarymetrics/main'
 include { PICARD_COLLECTINSERTSIZEMETRICS } from '../../modules/nf-core/picard/collectinsertsizemetrics/main'
 include { MOSDEPTH } from '../../modules/nf-core/mosdepth/main'
@@ -48,6 +50,7 @@ include { UMI_QC_HTML_REPORT } from '../../modules/local/umi_qc_html_report'
 include { LIBRARY_COVERAGE } from '../../modules/local/library_coverage'
 include { UMI_VARIANT_ANALYSIS as UMI_VARIANT_ANALYSIS_PREDEDUP } from '../../modules/local/umi_variant_analysis'
 include { UMI_VARIANT_ANALYSIS as UMI_VARIANT_ANALYSIS_POSTDEDUP } from '../../modules/local/umi_variant_analysis'
+include { UMI_VARIANT_ANALYSIS as UMI_VARIANT_ANALYSIS_CONSENSUS } from '../../modules/local/umi_variant_analysis'
 
 // Note: fgbio modules are not available in nf-core modules yet
 // Using UMI-tools modules for UMI processing
@@ -361,28 +364,28 @@ workflow UMI_ANALYSIS_SUBWORKFLOW {
     ch_versions = ch_versions.mix(UMI_VARIANT_ANALYSIS_PREDEDUP.out.versions)
     ch_multiqc_files = ch_multiqc_files.mix(UMI_VARIANT_ANALYSIS_PREDEDUP.out.multiqc.map { meta, json -> json })
     
-    // Run deduplication/consensus workflows based on parameters
-    // Can run both for comparison if run_both_methods = true
+    // ============================================================
+    // Deduplication/Consensus Workflows
+    // DEFAULT: Run BOTH umi_tools and fgbio for comprehensive analysis
+    // Use --skip_fgbio to run only umi_tools (faster)
+    // ============================================================
     
     // ============================================================
-    // umi_tools Deduplication Workflow
+    // umi_tools Deduplication Workflow (ALWAYS RUNS)
     // ============================================================
-    if (!params.use_fgbio_consensus || params.run_both_methods) {
-        UMITOOLS_DEDUP (
-            ch_bam_bai,
-            true  // get_output_stats - generate deduplication statistics
-        )
-        ch_versions = ch_versions.mix(UMITOOLS_DEDUP.out.versions)
-        
-        if (!params.use_fgbio_consensus) {
-            ch_final_bam = UMITOOLS_DEDUP.out.bam
-        }
-    }
+    UMITOOLS_DEDUP (
+        ch_bam_bai,
+        true  // get_output_stats - generate deduplication statistics
+    )
+    ch_versions = ch_versions.mix(UMITOOLS_DEDUP.out.versions)
+    
+    // Use umi_tools for downstream analysis
+    ch_final_bam = UMITOOLS_DEDUP.out.bam
     
     // ============================================================
-    // fgbio Consensus Workflow
+    // fgbio Consensus Workflow (OPTIONAL - runs by default)
     // ============================================================
-    if (params.use_fgbio_consensus || params.run_both_methods) {
+    if (!params.skip_fgbio) {
         // Step 1: Group reads by UMI
         FGBIO_GROUPREADSBYUMI (
             BWA_MEM.out.bam,
@@ -399,37 +402,79 @@ workflow UMI_ANALYSIS_SUBWORKFLOW {
         )
         ch_versions = ch_versions.mix(FGBIO_CALLMOLECULARCONSENSUSREADS.out.versions)
         
-        // Step 3: Convert unmapped consensus BAM to FASTQ for re-alignment
-        // TODO: Add SAMTOOLS_FASTQ module to convert consensus BAM to FASTQ
-        // Then re-align with BWA_MEM_CONSENSUS
-        // For now, use consensus BAM directly (requires fgbio FilterConsensusReads)
-        
-        if (params.use_fgbio_consensus && !params.run_both_methods) {
-            ch_final_bam = FGBIO_CALLMOLECULARCONSENSUSREADS.out.bam
-            log.warn "fgbio consensus workflow is experimental - consensus sequences need re-alignment"
-        }
-    }
-    
-    // If running both methods, use umi_tools for downstream by default
-    // Both outputs will be available in results directory
-    if (params.run_both_methods) {
-        ch_final_bam = UMITOOLS_DEDUP.out.bam
-        log.info "Running BOTH umi_tools dedup and fgbio consensus for comparison"
-        log.info "Downstream analysis will use umi_tools dedup results"
-        log.info "fgbio consensus results available in separate output directory"
-    }
-    
-    // Post-deduplication UMI QC metrics (only for umi_tools dedup)
-    if (!params.use_fgbio_consensus) {
-        UMI_QC_METRICS_POSTDEDUP (
-            UMITOOLS_DEDUP.out.log,
-            UMITOOLS_DEDUP.out.tsv_edit_distance,
-            UMITOOLS_DEDUP.out.tsv_per_umi,
-            UMITOOLS_DEDUP.out.tsv_umi_per_position,
-            UMITOOLS_DEDUP.out.bam
+        // Step 3: Convert unmapped consensus BAM to FASTQ
+        SAMTOOLS_FASTQ (
+            FGBIO_CALLMOLECULARCONSENSUSREADS.out.bam,
+            false  // interleave
         )
-        ch_versions = ch_versions.mix(UMI_QC_METRICS_POSTDEDUP.out.versions)
+        ch_versions = ch_versions.mix(SAMTOOLS_FASTQ.out.versions)
+        
+        // Step 4: Re-align consensus sequences with BWA-MEM
+        BWA_MEM_CONSENSUS (
+            SAMTOOLS_FASTQ.out.fastq,
+            ch_bwa_index,
+            true  // sort BAM
+        )
+        ch_versions = ch_versions.mix(BWA_MEM_CONSENSUS.out.versions)
+        
+        // Step 5: Index consensus BAM
+        SAMTOOLS_INDEX_CONSENSUS (
+            BWA_MEM_CONSENSUS.out.bam
+        )
+        ch_versions = ch_versions.mix(SAMTOOLS_INDEX_CONSENSUS.out.versions)
+        
+        // Step 6: Variant analysis on consensus BAM
+        ch_consensus_bam_bai = BWA_MEM_CONSENSUS.out.bam
+            .join(SAMTOOLS_INDEX_CONSENSUS.out.bai, by: 0)
+            .map { meta, bam, bai -> [meta, bam, bai] }
+        
+        UMI_VARIANT_ANALYSIS_CONSENSUS (
+            ch_consensus_bam_bai,
+            2  // min_reads_per_umi
+        )
+        ch_versions = ch_versions.mix(UMI_VARIANT_ANALYSIS_CONSENSUS.out.versions)
+        ch_multiqc_files = ch_multiqc_files.mix(UMI_VARIANT_ANALYSIS_CONSENSUS.out.multiqc.map { meta, json -> json })
+        
+        // Step 7: Feature counting on consensus BAM (if GTF provided)
+        if (gtf) {
+            SUBREAD_FEATURECOUNTS (
+                ch_consensus_bam_bai.map { meta, bam, bai -> [meta, bam] },
+                gtf
+            )
+            ch_versions = ch_versions.mix(SUBREAD_FEATURECOUNTS.out.versions)
+            ch_multiqc_files = ch_multiqc_files.mix(SUBREAD_FEATURECOUNTS.out.summary.map { meta, file -> file })
+            
+            // Step 8: Library coverage analysis on consensus counts
+            LIBRARY_COVERAGE (
+                SUBREAD_FEATURECOUNTS.out.counts
+            )
+            ch_versions = ch_versions.mix(LIBRARY_COVERAGE.out.versions)
+            ch_multiqc_files = ch_multiqc_files.mix(LIBRARY_COVERAGE.out.json.map { meta, file -> file })
+        }
+        
+        log.info "fgbio consensus sequences successfully re-aligned and analyzed"
     }
+    
+    // Log workflow configuration
+    if (!params.skip_fgbio) {
+        log.info "═══════════════════════════════════════════════════════"
+        log.info "Running BOTH umi_tools dedup AND fgbio consensus"
+        log.info "Downstream analysis uses: umi_tools dedup results"
+        log.info "Both outputs saved for comparison and validation"
+        log.info "═══════════════════════════════════════════════════════"
+    } else {
+        log.info "Running umi_tools dedup only (fgbio skipped with --skip_fgbio)"
+    }
+    
+    // Post-deduplication UMI QC metrics
+    UMI_QC_METRICS_POSTDEDUP (
+        UMITOOLS_DEDUP.out.log,
+        UMITOOLS_DEDUP.out.tsv_edit_distance,
+        UMITOOLS_DEDUP.out.tsv_per_umi,
+        UMITOOLS_DEDUP.out.tsv_umi_per_position,
+        UMITOOLS_DEDUP.out.bam
+    )
+    ch_versions = ch_versions.mix(UMI_QC_METRICS_POSTDEDUP.out.versions)
     
     // Index final BAM files for count generation
     SAMTOOLS_INDEX_DEDUP (

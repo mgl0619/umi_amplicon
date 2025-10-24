@@ -8,12 +8,30 @@
 
 **umi-amplicon** is a comprehensive bioinformatics pipeline for UMI-tagged amplicon sequencing analysis with advanced quality control and flexible deduplication strategies.
 
+### What's New in This Version
+
+🎉 **Dual Workflow System**
+- Both `umi_tools dedup` and `fgbio consensus` run by default for comprehensive validation
+- Complete fgbio workflow with automatic re-alignment of consensus sequences
+- Direct comparison of deduplication methods for quality assurance
+
+🔬 **Advanced UMI Variant Analysis**
+- Pre- and post-deduplication multi-variant UMI detection
+- Automated classification of sequencing errors vs UMI collisions
+- Specificity metrics to validate deduplication effectiveness
+
+📊 **Enhanced Quality Control**
+- Library coverage analysis with evenness metrics
+- Interactive HTML reports with Plotly visualizations
+- Comprehensive MultiQC integration
+
 ### Key Features
 
-✨ **Dual Deduplication Workflows**
-- **umi_tools dedup** - Fast, standard deduplication (default)
-- **fgbio consensus** - High-accuracy consensus building
-- **Comparison mode** - Run both methods simultaneously for benchmarking
+✨ **Dual Deduplication Workflows (Both Run by Default)**
+- **umi_tools dedup** - Fast, standard deduplication (always runs)
+- **fgbio consensus** - High-accuracy consensus building (optional)
+- **DEFAULT: Runs BOTH** for comprehensive analysis and validation
+- **Fast mode**: Use `--skip_fgbio` to run only umi_tools
 
 🔬 **Advanced UMI Analysis**
 - **Variant Analysis** - Assess multi-variant UMIs (pre & post-dedup)
@@ -120,9 +138,11 @@ The umi-amplicon pipeline performs the following steps:
    **Option B: fgbio consensus (optional - high accuracy)**
    - Groups reads by UMI using `fgbio GroupReadsByUmi`
    - Builds consensus sequences using `fgbio CallMolecularConsensusReads`
+   - Converts consensus BAM to FASTQ using `samtools fastq`
+   - Re-aligns consensus sequences with `BWA-MEM`
    - Leverages multiple reads for error correction
    - Higher accuracy but slower
-   - Enable with `--use_fgbio_consensus`
+   - Runs by default (skip with `--skip_fgbio`)
 
 12. **Post-Deduplication Variant Analysis** - Assess deduplication effectiveness:
    - Re-analyzes multi-variant UMIs after deduplication
@@ -247,8 +267,10 @@ graph TD
     
     J -->|High Accuracy| L[fgbio GroupReadsByUmi]
     L --> L1[fgbio CallMolecularConsensusReads]
-    L1 --> L2[Build Consensus Sequences]
-    L2 --> N
+    L1 --> L2[Convert to FASTQ]
+    L2 --> L3[BWA-MEM Re-alignment]
+    L3 --> L4[Consensus BAM]
+    L4 --> N
     
     J -->|Comparison Mode| M[Run Both Workflows]
     M --> M1[umi_tools + fgbio in Parallel]
@@ -351,51 +373,43 @@ The pipeline produces the following outputs:
     - Top 20 features bar chart
     - Summary statistics box
 
-- **fgbio Consensus Outputs** (when enabled):
+- **fgbio Consensus Outputs** (runs by default):
   - `*_umi-grouped.bam` - Grouped reads by UMI
   - `*_histogram.txt` - UMI family size histogram
   - `*_read-metrics.txt` - Grouping metrics
-  - `*_consensus_unmapped.bam` - Consensus sequences
+  - `*_consensus_unmapped.bam` - Unmapped consensus sequences
+  - `*_consensus.fastq.gz` - Consensus sequences as FASTQ
+  - `*_consensus_aligned.bam` - Re-aligned consensus sequences
+  - `*_consensus_aligned.bam.bai` - Index for consensus BAM
+  - `*_consensus_variant_analysis.txt` - Variant analysis on consensus
+  - `*_consensus_counts.txt` - Feature counts from consensus BAM
+  - `*_consensus_coverage.txt` - Library coverage from consensus
 
 ## Usage Examples
 
-### Basic Usage (umi_tools dedup)
+### Default Usage (Both Methods - Recommended)
 ```bash
+# DEFAULT: Runs BOTH umi_tools dedup AND fgbio consensus
 nextflow run umi-amplicon \
     --input samplesheet.csv \
     --fasta <FASTA> \
     --outdir results/ \
-    --umi_length 12 \
-    --umi_pattern NNNNNNNNNNNN \
-    -profile docker
-```
-
-### High-Accuracy Mode (fgbio consensus)
-```bash
-nextflow run umi-amplicon \
-    --input samplesheet.csv \
-    --fasta <FASTA> \
-    --outdir results/ \
-    --use_fgbio_consensus \
-    --fgbio_min_reads 3 \
-    --fgbio_min_baseq 30 \
-    --fgbio_group_strategy adjacency \
-    -profile docker
-```
-
-### Comparison Mode (Run Both Methods)
-```bash
-# Run BOTH umi_tools dedup AND fgbio consensus for benchmarking
-nextflow run umi-amplicon \
-    --input samplesheet.csv \
-    --fasta <FASTA> \
-    --outdir results/ \
-    --run_both_methods \
     --fgbio_min_reads 3 \
     --fgbio_min_baseq 30 \
     -profile docker
 ```
-**Note**: Both workflows run in parallel. Downstream analysis uses umi_tools results, but both outputs are saved for comparison.
+**Note**: Both workflows run in parallel. Downstream analysis uses umi_tools results, but both outputs are saved for comprehensive comparison.
+
+### Fast Mode (umi_tools only)
+```bash
+# Skip fgbio for faster processing (umi_tools only)
+nextflow run umi-amplicon \
+    --input samplesheet.csv \
+    --fasta <FASTA> \
+    --outdir results/ \
+    --skip_fgbio \
+    -profile docker
+```
 
 ### Custom Configuration
 ```bash
@@ -428,8 +442,8 @@ nextflow run umi-amplicon \
 ### Workflow Selection Parameters
 | Parameter | Description | Default |
 |-----------|-------------|---------|
-| `--use_fgbio_consensus` | Use fgbio consensus instead of umi_tools | `false` |
-| `--run_both_methods` | Run both umi_tools AND fgbio for comparison | `false` |
+| `--skip_fgbio` | Skip fgbio consensus (run only umi_tools) | `false` |
+| **DEFAULT** | **Both umi_tools and fgbio run** | **Both enabled** |
 
 ### fgbio Consensus Parameters
 | Parameter | Description | Default |
@@ -445,16 +459,112 @@ nextflow run umi-amplicon \
 | `--outdir` | Output directory | `./results` |
 | `--skip_mosdepth` | Skip coverage analysis | `false` |
 
+## Method Comparison: umi_tools vs fgbio
+
+### When to Use Each Method
+
+**umi_tools dedup (Fast & Standard)**
+- ✅ High-quality sequencing data (low error rate)
+- ✅ Large datasets requiring fast processing
+- ✅ Standard UMI-based deduplication
+- ✅ Well-established method with extensive validation
+- ⚡ **Speed**: Fast (selects best read per UMI)
+- 🎯 **Accuracy**: Good for high-quality data
+
+**fgbio consensus (High Accuracy)**
+- ✅ Lower-quality sequencing data
+- ✅ Critical applications requiring maximum accuracy
+- ✅ Error correction through consensus building
+- ✅ Detection of rare variants
+- ⚡ **Speed**: Slower (builds consensus from multiple reads)
+- 🎯 **Accuracy**: Excellent (error correction via consensus)
+
+**Both Methods (Recommended Default)**
+- ✅ Method validation and comparison
+- ✅ Quality assurance for critical projects
+- ✅ Publication-quality analysis
+- ✅ Benchmarking deduplication approaches
+- 📊 **Output**: Both results available for comparison
+
+### Technical Differences
+
+| Feature | umi_tools dedup | fgbio consensus |
+|---------|----------------|-----------------|
+| **Approach** | Select best read | Build consensus sequence |
+| **Error Correction** | No | Yes (via consensus) |
+| **Output** | Original reads | Consensus sequences |
+| **Speed** | Fast | Slower |
+| **Memory** | Low | Moderate |
+| **Best For** | High-quality data | Error-prone data |
+| **Re-alignment** | Not needed | Automatic |
+
+## Quick Reference
+
+### Common Commands
+
+**Run with both methods (default):**
+```bash
+nextflow run umi-amplicon --input samples.csv --fasta ref.fa -profile docker
+```
+
+**Run umi_tools only (fast mode):**
+```bash
+nextflow run umi-amplicon --input samples.csv --fasta ref.fa --skip_fgbio -profile docker
+```
+
+**Adjust fgbio parameters:**
+```bash
+nextflow run umi-amplicon \
+    --input samples.csv \
+    --fasta ref.fa \
+    --fgbio_min_reads 3 \
+    --fgbio_min_baseq 30 \
+    --fgbio_group_strategy adjacency \
+    -profile docker
+```
+
+**Resume a failed run:**
+```bash
+nextflow run umi-amplicon --input samples.csv --fasta ref.fa -profile docker -resume
+```
+
+### Key Output Files
+
+| File | Description |
+|------|-------------|
+| `umitools_dedup/*.bam` | Deduplicated BAM files (umi_tools) |
+| `fgbio_consensus/*_aligned.bam` | Consensus BAM files (fgbio) |
+| `umi_variant_analysis/*_prededup.txt` | Pre-dedup variant analysis |
+| `umi_variant_analysis/*_postdedup.txt` | Post-dedup variant analysis |
+| `library_coverage/*.txt` | Coverage and evenness metrics |
+| `multiqc_report.html` | Comprehensive QC report |
+
 ## Troubleshooting
 
 ### Common Issues
-1. **Memory Issues**: Increase memory allocation for large datasets
-2. **Quality Issues**: Adjust quality thresholds for your data
-3. **Pattern Issues**: Verify UMI patterns match your experimental design
+
+**Memory Issues**
+- Increase memory allocation for large datasets
+- Use `--skip_fgbio` for faster processing with lower memory
+
+**Quality Issues**
+- Adjust `--fgbio_min_baseq` for your data quality
+- Check `--umi_quality_filter_threshold` settings
+
+**Pattern Issues**
+- Verify `--umi_pattern` matches your experimental design
+- Ensure `--umi_length` matches the pattern
+
+**Performance**
+- Use `--skip_fgbio` for faster processing
+- Enable `-resume` to restart from last successful step
+- Consider increasing CPU/memory resources in config
 
 ## Acknowledgments
 
 - The nf-core community for their support and feedback
+- fgbio developers for the consensus calling tools
+- UMI-tools developers for the deduplication framework
 - The UMI-tools developers for their excellent software
 - The Nextflow community for their continuous improvements
 - All contributors who have helped improve this pipeline
