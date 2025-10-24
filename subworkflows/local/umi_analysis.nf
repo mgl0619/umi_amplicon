@@ -20,9 +20,11 @@ include { SUBREAD_FEATURECOUNTS } from '../../modules/nf-core/subread/featurecou
 
 // Load nf-core subworkflows and modules for BAM processing
 include { SAMTOOLS_INDEX } from '../../modules/nf-core/samtools/index/main'
+include { SAMTOOLS_INDEX as SAMTOOLS_INDEX_DEDUP } from '../../modules/nf-core/samtools/index/main'
 include { SAMTOOLS_STATS } from '../../modules/nf-core/samtools/stats/main'
 include { SAMTOOLS_FLAGSTAT } from '../../modules/nf-core/samtools/flagstat/main'
 include { SAMTOOLS_IDXSTATS } from '../../modules/nf-core/samtools/idxstats/main'
+include { SAMTOOLS_IDXSTATS as SAMTOOLS_IDXSTATS_DEDUP } from '../../modules/nf-core/samtools/idxstats/main'
 include { PICARD_COLLECTALIGNMENTSUMMARYMETRICS } from '../../modules/nf-core/picard/collectalignmentsummarymetrics/main'
 include { PICARD_COLLECTINSERTSIZEMETRICS } from '../../modules/nf-core/picard/collectinsertsizemetrics/main'
 include { MOSDEPTH } from '../../modules/nf-core/mosdepth/main'
@@ -353,6 +355,23 @@ workflow UMI_ANALYSIS_SUBWORKFLOW {
     )
     ch_versions = ch_versions.mix(UMI_QC_METRICS_POSTDEDUP.out.versions)
     
+    // Index deduplicated BAM files for count generation
+    SAMTOOLS_INDEX_DEDUP (
+        UMITOOLS_DEDUP.out.bam
+    )
+    ch_versions = ch_versions.mix(SAMTOOLS_INDEX_DEDUP.out.versions)
+    
+    // Generate reference counts from deduplicated BAM files
+    ch_dedup_bam_bai = UMITOOLS_DEDUP.out.bam
+        .join(SAMTOOLS_INDEX_DEDUP.out.bai, by: 0)
+        .map { meta, bam, bai -> [meta, bam, bai] }
+    
+    SAMTOOLS_IDXSTATS_DEDUP (
+        ch_dedup_bam_bai
+    )
+    ch_versions = ch_versions.mix(SAMTOOLS_IDXSTATS_DEDUP.out.versions)
+    ch_multiqc_files = ch_multiqc_files.mix(SAMTOOLS_IDXSTATS_DEDUP.out.idxstats.map { meta, files -> files }.flatten())
+    
     // Generate HTML report from both pre-dedup and post-dedup metrics
     // Combine pre-dedup text, pre-dedup JSON, and post-dedup JSON for comprehensive report
     ch_combined_metrics = UMI_QC_METRICS_POSTUMIEXTRACT.out.qc_metrics
@@ -372,13 +391,13 @@ workflow UMI_ANALYSIS_SUBWORKFLOW {
     //     FGBIO_GROUPREADSBYUMI + FGBIO_CALLMOLECULARCONSENSUSREADS
     // }
     
-    // Feature counting for multiple reference sequences
+    // Gene-level counting with featureCounts (if GTF provided)
+    // Uses deduplicated BAM for accurate gene expression quantification
     if (gtf) {
-        // Combine BAM files with GTF annotation
-        ch_bam_gtf = BWA_MEM.out.bam.map { meta, bam -> [meta, bam, gtf] }
+        ch_dedup_bam_gtf = UMITOOLS_DEDUP.out.bam.map { meta, bam -> [meta, bam, gtf] }
         
         SUBREAD_FEATURECOUNTS (
-            ch_bam_gtf
+            ch_dedup_bam_gtf
         )
         ch_versions = ch_versions.mix(SUBREAD_FEATURECOUNTS.out.versions)
         ch_multiqc_files = ch_multiqc_files.mix(SUBREAD_FEATURECOUNTS.out.summary)
@@ -407,4 +426,5 @@ workflow UMI_ANALYSIS_SUBWORKFLOW {
     deduped = UMITOOLS_DEDUP.out.bam
     feature_counts = gtf ? SUBREAD_FEATURECOUNTS.out.counts : Channel.empty()
     umi_html_report = UMI_QC_HTML_REPORT.out.html_report
+    dedup_idxstats = SAMTOOLS_IDXSTATS_DEDUP.out.idxstats
 }
