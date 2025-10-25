@@ -62,19 +62,18 @@ workflow UMI_ANALYSIS_SUBWORKFLOW {
     bwa_index
     gtf
     umi_length
-    umi_pattern
-    umi_method
-    umi_quality_filter_threshold
-    umi_collision_rate_threshold
-    umi_diversity_threshold
-    group_strategy
-    consensus_strategy
-    min_reads
-    min_fraction
-    error_rate_pre_umi
-    max_edit_distance
-    min_base_quality
     outdir
+    
+    // Note: The following parameters are accessed via params.* by modules:
+    // - umi_pattern (used by UMITOOLS_EXTRACT)
+    // - umi_method (used by UMITOOLS_DEDUP)
+    // - umi_quality_filter_threshold (used by UMITOOLS_EXTRACT and UMI_QC_METRICS)
+    // - umi_collision_rate_threshold (used by UMI_QC_METRICS)
+    // - umi_diversity_threshold (used by UMI_QC_METRICS)
+    // - max_edit_distance (used by various modules)
+    // - min_base_quality (used by various modules)
+    // - fgbio_group_strategy, fgbio_min_reads, fgbio_min_baseq (used by fgbio modules)
+    // - skip_fgbio, skip_mosdepth (workflow control flags)
 
     main:
     ch_versions = Channel.empty()
@@ -186,9 +185,9 @@ workflow UMI_ANALYSIS_SUBWORKFLOW {
     UMI_QC_METRICS_POSTUMIEXTRACT (
         ch_qc_input,  // Pass all inputs as single tuple
         umi_length,
-        umi_quality_filter_threshold,
-        umi_collision_rate_threshold,
-        umi_diversity_threshold
+        params.umi_quality_filter_threshold,
+        params.umi_collision_rate_threshold,
+        params.umi_diversity_threshold
     )
     ch_versions = ch_versions.mix(UMI_QC_METRICS_POSTUMIEXTRACT.out.versions)
     ch_multiqc_files = ch_multiqc_files.mix(UMI_QC_METRICS_POSTUMIEXTRACT.out.multiqc.map { meta, json -> json })

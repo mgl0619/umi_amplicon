@@ -157,39 +157,33 @@ if (!file(params.outdir).canWrite()) {
     exit 1
 }
 
-// Set default parameters
-params.umi_length = params.umi_length ?: 12
-params.umi_pattern = params.umi_pattern ?: "NNNNNNNNNNNN"
-params.umi_method = params.umi_method ?: "directional"
-params.umi_quality_filter_threshold = params.umi_quality_filter_threshold ?: 15
-params.umi_collision_rate_threshold = params.umi_collision_rate_threshold ?: 0.1
-params.umi_diversity_threshold = params.umi_diversity_threshold ?: 1000
-params.group_strategy = params.group_strategy ?: "paired"
-params.consensus_strategy = params.consensus_strategy ?: "paired"
-params.min_reads = params.min_reads ?: 1
-params.min_fraction = params.min_fraction ?: 0.5
-params.error_rate_pre_umi = params.error_rate_pre_umi ?: 0.01
-params.max_edit_distance = params.max_edit_distance ?: 1
-params.min_base_quality = params.min_base_quality ?: 20
+// Note: Default parameters are set in nextflow.config
+// No need to set defaults here as they're already defined in config
 
 // Print pipeline information
 log.info nfcoreHeader()
 log.info "Pipeline parameters:"
 log.info "  Input samplesheet: ${params.input}"
 log.info "  Output directory: ${params.outdir}"
+log.info "  FASTA reference: ${params.fasta}"
+log.info "  GTF annotation: ${params.gtf ?: 'Not provided'}"
+log.info ""
+log.info "UMI parameters:"
 log.info "  UMI length: ${params.umi_length}"
 log.info "  UMI pattern: ${params.umi_pattern}"
 log.info "  UMI method: ${params.umi_method}"
-log.info "  UMI quality filter threshold: ${params.umi_quality_filter_threshold}"
-log.info "  UMI collision rate threshold: ${params.umi_collision_rate_threshold}"
-log.info "  UMI diversity threshold: ${params.umi_diversity_threshold}"
-log.info "  Group strategy: ${params.group_strategy}"
-log.info "  Consensus strategy: ${params.consensus_strategy}"
-log.info "  Minimum reads: ${params.min_reads}"
-log.info "  Minimum fraction: ${params.min_fraction}"
-log.info "  Error rate pre-UMI: ${params.error_rate_pre_umi}"
-log.info "  Maximum edit distance: ${params.max_edit_distance}"
-log.info "  Minimum base quality: ${params.min_base_quality}"
+log.info "  Quality filter threshold: ${params.umi_quality_filter_threshold}"
+log.info "  Collision rate threshold: ${params.umi_collision_rate_threshold}"
+log.info "  Diversity threshold: ${params.umi_diversity_threshold}"
+log.info ""
+log.info "Workflow options:"
+log.info "  Skip fgbio: ${params.skip_fgbio}"
+log.info "  Skip mosdepth: ${params.skip_mosdepth}"
+log.info ""
+log.info "fgbio consensus parameters:"
+log.info "  Group strategy: ${params.fgbio_group_strategy}"
+log.info "  Min reads: ${params.fgbio_min_reads}"
+log.info "  Min base quality: ${params.fgbio_min_baseq}"
 
 // Load nf-core modules
 include { FASTQC } from './modules/nf-core/fastqc/main'
@@ -255,18 +249,6 @@ workflow {
         params.bwa_index,
         params.gtf,
         params.umi_length,
-        params.umi_pattern,
-        params.umi_method,
-        params.umi_quality_filter_threshold,
-        params.umi_collision_rate_threshold,
-        params.umi_diversity_threshold,
-        params.group_strategy,
-        params.consensus_strategy,
-        params.min_reads,
-        params.min_fraction,
-        params.error_rate_pre_umi,
-        params.max_edit_distance,
-        params.min_base_quality,
         params.outdir
     )
     
