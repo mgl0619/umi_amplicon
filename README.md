@@ -91,7 +91,7 @@ The umi-amplicon pipeline performs the following steps:
    - Full 5' and 3' end trimming (UMIs now in headers)
    - Adapter trimming
    - Quality filtering
-   - Read merging (for paired-end amplicon data, not implemented yet TODO: merge if high-merging rate)
+   - **Maintains paired-end structure** (no merging for optimal UMI deduplication)
    - Final quality statistics
 
 6. **FastQC** - Quality check after full processing:
@@ -126,29 +126,37 @@ The umi-amplicon pipeline performs the following steps:
      - Ambiguous cases
    - Calculates baseline specificity metrics
 
-11. **UMI Deduplication/Consensus** - Two workflow options:
+11. **UMI Deduplication/Consensus** - Dual workflow (BOTH run by default):
    
-   **Option A: umi_tools dedup (default - fast)**
+   **Workflow A: umi_tools dedup (always runs)**
    - Performed on aligned BAM files using `umi_tools dedup`
    - Uses genomic coordinates + UMI for accurate deduplication
    - Directional network-based deduplication method
    - Selects best read from each UMI family
    - Fast and efficient for high-quality data
    
-   **Option B: fgbio consensus (optional - high accuracy)**
+   **Workflow B: fgbio consensus (runs by default, skip with `--skip_fgbio`)**
    - Groups reads by UMI using `fgbio GroupReadsByUmi`
    - Builds consensus sequences using `fgbio CallMolecularConsensusReads`
    - Converts consensus BAM to FASTQ using `samtools fastq`
    - Re-aligns consensus sequences with `BWA-MEM`
+   - Indexes consensus BAM for downstream analysis
    - Leverages multiple reads for error correction
    - Higher accuracy but slower
-   - Runs by default (skip with `--skip_fgbio`)
+   
+   **Both workflows produce:**
+   - Deduplicated/consensus BAM files
+   - Variant analysis reports
+   - Feature counts (if GTF provided)
+   - Library coverage metrics
 
 12. **Post-Deduplication Variant Analysis** - Assess deduplication effectiveness:
-   - Re-analyzes multi-variant UMIs after deduplication
+   - **umi_tools**: Re-analyzes multi-variant UMIs after deduplication
+   - **fgbio**: Analyzes multi-variant UMIs in consensus sequences
    - Compares pre/post-dedup specificity
-   - Validates deduplication performance
+   - Validates deduplication/consensus performance
    - Identifies remaining problematic UMIs
+   - Enables direct comparison between methods
 
 13. **Post-Deduplication UMI QC** - Deduplication performance metrics (umi_tools only):
    - UMI family statistics (count, sizes, distribution)
@@ -159,12 +167,16 @@ The umi-amplicon pipeline performs the following steps:
    - Mean/median edit distance
    - Error correction rate
 
-14. **Feature Counting** - Count reads per amplicon/feature:
+14. **Feature Counting** - Count reads per amplicon/feature (both workflows):
    - Uses `featureCounts` from Subread package
-   - Counts deduplicated/consensus reads mapping to each feature
-   - Generates count matrix for downstream analysis
+   - **umi_tools**: Counts deduplicated reads mapping to each feature
+   - **fgbio**: Counts consensus reads mapping to each feature
+   - Generates separate count matrices for direct comparison
+   - Requires GTF annotation file (`--gtf`)
 
-15. **Library Coverage Analysis** - Comprehensive coverage metrics:
+15. **Library Coverage Analysis** - Comprehensive coverage metrics (both workflows):
+   - **umi_tools**: Coverage from deduplicated reads
+   - **fgbio**: Coverage from consensus reads
    - Calculates library coverage (% of reference sequences detected)
    - **Evenness metrics**:
      - Shannon entropy - diversity measure
