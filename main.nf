@@ -39,6 +39,9 @@ def helpMessage() {
         --max_edit_distance [int]             Maximum edit distance for UMI clustering (default: 1)
         --min_base_quality [int]              Minimum base quality for filtering (default: 20)
 
+    Read processing options:
+        --merge_pairs                         Merge paired-end reads after trimming (default: false, not recommended for UMI dedup)
+    
     Workflow options:
         --skip_fgbio                          Skip fgbio consensus workflow (run only umi_tools dedup) (default: false)
         --skip_mosdepth                       Skip mosdepth coverage analysis (default: false)
@@ -175,6 +178,9 @@ log.info "  UMI method: ${params.umi_method}"
 log.info "  Quality filter threshold: ${params.umi_quality_filter_threshold}"
 log.info "  Collision rate threshold: ${params.umi_collision_rate_threshold}"
 log.info "  Diversity threshold: ${params.umi_diversity_threshold}"
+log.info ""
+log.info "Read processing:"
+log.info "  Merge paired reads: ${params.merge_pairs}"
 log.info ""
 log.info "Workflow options:"
 log.info "  Skip fgbio: ${params.skip_fgbio}"

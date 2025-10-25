@@ -451,6 +451,13 @@ nextflow run umi-amplicon \
 | `--umi_collision_rate_threshold` | Max acceptable collision rate | `0.1` |
 | `--umi_diversity_threshold` | Min unique UMIs expected | `1000` |
 
+### Read Processing Parameters
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `--merge_pairs` | Merge paired-end reads after trimming | `false` |
+
+**Note**: Merging is **not recommended** for UMI deduplication as paired-end structure provides more information for accurate deduplication. Use merging only for specific use cases like very short amplicons.
+
 ### Workflow Selection Parameters
 | Parameter | Description | Default |
 |-----------|-------------|---------|

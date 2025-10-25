@@ -209,7 +209,7 @@ workflow UMI_ANALYSIS_SUBWORKFLOW {
         ch_samples_for_fastp_trim,
         false,  // discard_trimmed_pass
         false,  // save_trimmed_fail
-        false   // save_merged - NO merging for optimal UMI dedup
+        params.merge_pairs   // save_merged - controlled by --merge_pairs parameter
     )
     ch_versions = ch_versions.mix(FASTP_TRIM.out.versions)
     ch_multiqc_files = ch_multiqc_files.mix(FASTP_TRIM.out.json.map { meta, files -> files }.flatten())
@@ -222,15 +222,18 @@ workflow UMI_ANALYSIS_SUBWORKFLOW {
     ch_versions = ch_versions.mix(FASTQC_FASTP_TRIM.out.versions)
     ch_multiqc_files = ch_multiqc_files.mix(FASTQC_FASTP_TRIM.out.html.map { meta, files -> files }.flatten())
     
-    // Step 5: Keep reads as paired-end for optimal UMI deduplication
-    // FASTP --correction already fixed overlapping bases without merging
-    // This maintains paired-end structure which UMI-tools dedup uses effectively
+    // Step 5: Process reads based on merge_pairs setting
+    // If merged: treat as single-end
+    // If not merged: keep as paired-end for optimal UMI deduplication
     ch_processed_reads = FASTP_TRIM.out.reads.map { meta, reads ->
+        def is_merged = params.merge_pairs && !meta.single_end
+        def is_single = meta.single_end || is_merged
+        
         [
-            meta,  // Keep original meta
-            reads instanceof List ? reads[0] : reads,  // R1
-            reads instanceof List && reads.size() > 1 ? reads[1] : [],  // R2 (empty if single-end)
-            reads instanceof List && reads.size() > 1 ? false : true  // is_single_end
+            [id: meta.id, single_end: is_single],  // Update meta with correct single_end flag
+            reads instanceof List ? reads[0] : reads,  // R1 or merged read
+            (reads instanceof List && reads.size() > 1 && !is_merged) ? reads[1] : [],  // R2 (empty if single-end or merged)
+            is_single  // is_single_end flag
         ]
     }
 
@@ -313,10 +316,12 @@ workflow UMI_ANALYSIS_SUBWORKFLOW {
     ch_multiqc_files = ch_multiqc_files.mix(PICARD_COLLECTALIGNMENTSUMMARYMETRICS.out.metrics.map { meta, files -> files }.flatten())
     
     // Picard CollectInsertSizeMetrics - Insert size distribution (for paired-end only)
-    // Only run if reads are NOT merged (i.e., kept as paired-end)
-    if (!params.merge_pairs) {
+    // Only run if reads are kept as paired-end (not merged and not originally single-end)
+    ch_paired_bam = BWA_MEM.out.bam.filter { meta, bam -> !meta.single_end }
+    
+    if (ch_paired_bam) {
         PICARD_COLLECTINSERTSIZEMETRICS (
-            BWA_MEM.out.bam
+            ch_paired_bam
         )
         ch_versions = ch_versions.mix(PICARD_COLLECTINSERTSIZEMETRICS.out.versions)
         ch_multiqc_files = ch_multiqc_files.mix(PICARD_COLLECTINSERTSIZEMETRICS.out.metrics.map { meta, files -> files }.flatten())
@@ -409,8 +414,14 @@ workflow UMI_ANALYSIS_SUBWORKFLOW {
         ch_versions = ch_versions.mix(SAMTOOLS_FASTQ.out.versions)
         
         // Step 4: Re-align consensus sequences with BWA-MEM
+        // Note: Consensus reads are always treated as single-end after fgbio processing
+        ch_consensus_fastq = SAMTOOLS_FASTQ.out.fastq.map { meta, fastq ->
+            // fgbio consensus output is single-end, update meta accordingly
+            [[id: meta.id, single_end: true], fastq]
+        }
+        
         BWA_MEM_CONSENSUS (
-            SAMTOOLS_FASTQ.out.fastq,
+            ch_consensus_fastq,
             ch_bwa_index,
             true  // sort BAM
         )
