@@ -423,6 +423,7 @@ workflow UMI_ANALYSIS_SUBWORKFLOW {
         BWA_MEM_CONSENSUS (
             ch_consensus_fastq,
             ch_bwa_index,
+            ch_fasta,
             true  // sort BAM
         )
         ch_versions = ch_versions.mix(BWA_MEM_CONSENSUS.out.versions)
