@@ -3,7 +3,7 @@ process UMI_QC_METRICS_POSTDEDUP {
     label 'process_low'
 
     conda "conda-forge::python=3.11 conda-forge::pandas=2.0.3"
-    container "quay.io/biocontainers/python:3.11"
+    container "quay.io/biocontainers/pandas:2.0.3"
 
     input:
     tuple val(meta), path(dedup_log)

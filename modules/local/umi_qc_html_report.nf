@@ -3,7 +3,7 @@ process UMI_QC_HTML_REPORT {
     label 'process_low'
 
     conda "${moduleDir}/umi_qc_html_report_environment.yml"
-    container "umi_qc_report:latest"
+    container "quay.io/biocontainers/mulled-v2-ad9dd5f398966bf899ae05f8e7c54d0fb10cdfa7:05678da05b8e5a7a5130e90a9f9a6c585b965afa-0"
 
     input:
     tuple val(meta), path(pre_dedup_txt), path(pre_dedup_json), path(post_dedup_json)
