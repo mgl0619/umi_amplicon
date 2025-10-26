@@ -7,6 +7,7 @@
 */
 
 // Load nf-core modules
+include { FASTQC as FASTQC_RAW } from '../../modules/nf-core/fastqc/main'
 include { FASTP as FASTP_QC } from '../../modules/nf-core/fastp/main'
 include { FASTP as FASTP_TRIM } from '../../modules/nf-core/fastp/main'
 include { FASTQC as FASTQC_FASTP_QC } from '../../modules/nf-core/fastqc/main'
