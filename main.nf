@@ -18,30 +18,31 @@ def helpMessage() {
     =========================================
 
     Usage:
-        nextflow run umi-amplicon --input samplesheet.csv --outdir <OUTDIR> [options]
+        nextflow run umi-amplicon --input samplesheet.csv --fasta <FASTA> --outdir <OUTDIR> [options]
 
     Mandatory arguments:
         --input [file]                        Path to input samplesheet (see format below)
-        --outdir [file]                       The output directory where the results will be saved
+        --fasta [file]                        Path to FASTA reference genome file
+        --outdir [file]                       The output directory where the results will be saved (default: ./results)
 
-    Options:
-        --genome [str]                        Name of iGenomes reference
-        --fasta [file]                        Path to FASTA genome file
-        --bwa_index [file]                    Path to BWA index files
-        --gtf [file]                          Path to GTF annotation file
+    Reference options:
+        --bwa_index [file]                    Path to BWA index directory (if not provided, will be generated)
+        --gtf [file]                          Path to GTF annotation file (required for feature counting)
+
+    UMI parameters:
         --umi_length [int]                    Length of UMI sequences (default: 12)
         --umi_pattern [str]                   Pattern for UMI extraction (default: NNNNNNNNNNNN)
-        --umi_method [str]                    UMI extraction method: 'directional' or 'unique' (default: 'directional')
-        --umi_quality_filter_threshold [int]  Quality filter threshold for UMI extraction and QC (default: 15)
+        --umi_method [str]                    UMI deduplication method: 'directional', 'unique', 'cluster', 'adjacency' (default: 'directional')
+        --umi_quality_filter_threshold [int]  Quality filter threshold for UMI bases (default: 15)
         --umi_collision_rate_threshold [float] Maximum acceptable collision rate (default: 0.1)
-        --umi_diversity_threshold [int]        Minimum UMI diversity (default: 1000)
-        --group_strategy [str]                Grouping strategy for fgbio: 'paired' or 'single' (default: 'paired')
-        --consensus_strategy [str]            Consensus strategy for fgbio: 'paired' or 'single' (default: 'paired')
-        --min_reads [int]                     Minimum reads per UMI group (default: 1)
-        --min_fraction [float]                Minimum fraction for consensus (default: 0.5)
-        --error_rate_pre_umi [float]          Error rate pre-UMI for fgbio (default: 0.01)
-        --max_edit_distance [int]             Maximum edit distance for filtering (default: 1)
+        --umi_diversity_threshold [int]       Minimum expected UMI diversity (default: 1000)
+        --max_edit_distance [int]             Maximum edit distance for UMI clustering (default: 1)
         --min_base_quality [int]              Minimum base quality for filtering (default: 20)
+
+    Read processing options:
+        --merge_pairs                         Merge paired-end reads after trimming (default: false, not recommended for UMI dedup)
+    
+    Other options:
         --help                                Show this help message
         --version                             Show pipeline version
 
@@ -165,19 +166,20 @@ log.info nfcoreHeader()
 log.info "Pipeline parameters:"
 log.info "  Input samplesheet: ${params.input}"
 log.info "  Output directory: ${params.outdir}"
+log.info "  FASTA reference: ${params.fasta}"
+log.info "  GTF annotation: ${params.gtf ?: 'Not provided'}"
+log.info ""
+log.info "UMI parameters:"
 log.info "  UMI length: ${params.umi_length}"
 log.info "  UMI pattern: ${params.umi_pattern}"
 log.info "  UMI method: ${params.umi_method}"
-log.info "  UMI quality filter threshold: ${params.umi_quality_filter_threshold}"
-log.info "  UMI collision rate threshold: ${params.umi_collision_rate_threshold}"
-log.info "  UMI diversity threshold: ${params.umi_diversity_threshold}"
-log.info "  Group strategy: ${params.group_strategy}"
-log.info "  Consensus strategy: ${params.consensus_strategy}"
-log.info "  Minimum reads: ${params.min_reads}"
-log.info "  Minimum fraction: ${params.min_fraction}"
-log.info "  Error rate pre-UMI: ${params.error_rate_pre_umi}"
-log.info "  Maximum edit distance: ${params.max_edit_distance}"
-log.info "  Minimum base quality: ${params.min_base_quality}"
+log.info "  Quality filter threshold: ${params.umi_quality_filter_threshold}"
+log.info "  Collision rate threshold: ${params.umi_collision_rate_threshold}"
+log.info "  Diversity threshold: ${params.umi_diversity_threshold}"
+log.info ""
+log.info "Read processing:"
+log.info "  Merge paired reads: ${params.merge_pairs}"
+log.info ""
 
 // Load nf-core modules
 include { FASTQC } from './modules/nf-core/fastqc/main'

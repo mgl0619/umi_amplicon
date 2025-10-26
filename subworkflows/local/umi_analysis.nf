@@ -32,11 +32,6 @@ include { MOSDEPTH } from '../../modules/nf-core/mosdepth/main'
 // Load UMI deduplication module
 include { UMITOOLS_DEDUP } from '../../modules/nf-core/umitools/dedup/main'
 
-// TODO: Add fgbio modules for alternative UMI processing workflow (future enhancement)
-// include { FGBIO_FASTQTOBAM } from '../../modules/nf-core/fgbio/fastqtobam/main'
-// include { FGBIO_GROUPREADSBYUMI } from '../../modules/nf-core/fgbio/groupreadsbyumi/main'
-// include { FGBIO_CALLMOLECULARCONSENSUSREADS } from '../../modules/nf-core/fgbio/callmolecularconsensusreads/main'
-
 // Load UMI grouping module
 include { UMITOOLS_GROUP } from '../../modules/nf-core/umitools/group/main'
 
@@ -46,9 +41,6 @@ include { UMI_QC_METRICS_POSTUMIEXTRACT } from '../../modules/local/umi_qc_metri
 include { UMI_QC_METRICS_POSTDEDUP } from '../../modules/local/umi_qc_metrics_postdedup'
 include { UMI_QC_HTML_REPORT } from '../../modules/local/umi_qc_html_report'
 include { LIBRARY_COVERAGE } from '../../modules/local/library_coverage'
-
-// Note: fgbio modules are not available in nf-core modules yet
-// Using UMI-tools modules for UMI processing
 
 workflow UMI_ANALYSIS_SUBWORKFLOW {
     take:
@@ -398,11 +390,6 @@ workflow UMI_ANALYSIS_SUBWORKFLOW {
         ch_combined_metrics
     )
     ch_versions = ch_versions.mix(UMI_QC_HTML_REPORT.out.versions)
-    
-    // TODO: Add fgbio as alternative deduplication method (future enhancement)
-    // if (umi_tool == "fgbio") {
-    //     FGBIO_GROUPREADSBYUMI + FGBIO_CALLMOLECULARCONSENSUSREADS
-    // }
     
     // Gene-level counting with featureCounts (if GTF provided)
     // Uses deduplicated BAM for accurate gene expression quantification
