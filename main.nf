@@ -223,8 +223,8 @@ Channel
 
 // Main workflow
 workflow {
-    ch_versions = Channel.empty()
-    ch_multiqc_files = Channel.empty()
+    ch_versions = channel.empty()
+    ch_multiqc_files = channel.empty()
 
     // UMI Analysis Subworkflow
     UMI_ANALYSIS_SUBWORKFLOW (

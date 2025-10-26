@@ -10,11 +10,6 @@
 
 ### What's New in This Version
 
-🔬 **Advanced UMI Variant Analysis**
-- Pre- and post-deduplication multi-variant UMI detection
-- Automated classification of sequencing errors vs UMI collisions
-- Specificity metrics to validate deduplication effectiveness
-
 📊 **Enhanced Quality Control**
 - Library coverage analysis with evenness metrics
 - Interactive HTML reports with Plotly visualizations
@@ -27,11 +22,6 @@
 - Directional clustering algorithm for accurate duplicate identification
 - Comprehensive deduplication statistics and quality metrics
 
-🔬 **Advanced UMI Analysis**
-- **Variant Analysis** - Assess multi-variant UMIs (pre & post-dedup)
-- **Specificity Metrics** - Validate deduplication effectiveness
-- **Error Detection** - Identify sequencing errors vs UMI collisions
-
 📊 **Comprehensive QC**
 - **Library Coverage** - Coverage metrics with evenness analysis
 - **Interactive Reports** - HTML reports with Plotly visualizations
@@ -42,8 +32,9 @@
 - Docker/Conda support for reproducibility
 - Uses [nf-core modules](https://github.com/nf-core/modules) where possible
 
-## TODO
-   build nf-core test & ensure CI ready 
+## Status
+
+✅ **Production Ready** - Core pipeline complete with comprehensive QC and library coverage analysis 
 
 ## Pipeline summary
 
@@ -112,15 +103,7 @@ The umi-amplicon pipeline performs the following steps:
    - Generates groups.tsv file showing UMI groupings
    - **For inspection and QC purposes** - helps understand UMI clustering
 
-10. **Pre-Deduplication Variant Analysis** - Assess UMI specificity:
-   - Analyzes multi-variant UMIs (same UMI, different sequences)
-   - Classifies variants as:
-     - Likely sequencing errors (major variant >90%)
-     - Likely UMI collisions (different genomic positions)
-     - Ambiguous cases
-   - Calculates baseline specificity metrics
-
-11. **UMI Deduplication** - Remove PCR duplicates using UMI information:
+10. **UMI Deduplication** - Remove PCR duplicates using UMI information:
    - Performed on aligned BAM files using `umi_tools dedup`
    - Uses genomic coordinates + UMI for accurate deduplication
    - Directional network-based deduplication method
@@ -128,13 +111,7 @@ The umi-amplicon pipeline performs the following steps:
    - Generates comprehensive deduplication statistics
    - Produces deduplicated BAM files for downstream analysis
 
-12. **Post-Deduplication Variant Analysis** - Assess deduplication effectiveness:
-   - Re-analyzes multi-variant UMIs after deduplication
-   - Compares pre/post-dedup specificity
-   - Validates deduplication performance
-   - Identifies remaining problematic UMIs
-
-13. **Post-Deduplication UMI QC** - Deduplication performance metrics:
+11. **Post-Deduplication UMI QC** - Deduplication performance metrics:
    - UMI family statistics (count, sizes, distribution)
    - Edit distance analysis between UMIs (error correction/clustering)
    - Deduplication rate and efficiency
@@ -143,13 +120,13 @@ The umi-amplicon pipeline performs the following steps:
    - Mean/median edit distance
    - Error correction rate
 
-14. **Feature Counting** - Count reads per amplicon/feature:
+12. **Feature Counting** - Count reads per amplicon/feature:
    - Uses `featureCounts` from Subread package
    - Counts deduplicated reads mapping to each feature
    - Generates count matrix for gene expression analysis
    - Requires GTF annotation file (`--gtf`)
 
-15. **Library Coverage Analysis** - Comprehensive coverage metrics:
+13. **Library Coverage Analysis** - Comprehensive coverage metrics:
    - Coverage analysis from deduplicated reads
    - Calculates library coverage (% of reference sequences detected)
    - **Evenness metrics**:

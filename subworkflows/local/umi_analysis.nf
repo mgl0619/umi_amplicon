@@ -41,8 +41,7 @@ include { UMI_QC_METRICS_POSTUMIEXTRACT } from '../../modules/local/umi_qc_metri
 include { UMI_QC_METRICS_POSTDEDUP } from '../../modules/local/umi_qc_metrics_postdedup'
 include { UMI_QC_HTML_REPORT } from '../../modules/local/umi_qc_html_report'
 include { LIBRARY_COVERAGE } from '../../modules/local/library_coverage'
-include { UMI_VARIANT_ANALYSIS as UMI_VARIANT_ANALYSIS_PREDEDUP } from '../../modules/local/umi_variant_analysis'
-include { UMI_VARIANT_ANALYSIS as UMI_VARIANT_ANALYSIS_POSTDEDUP } from '../../modules/local/umi_variant_analysis'
+include { UMI_CONSENSUS } from '../../modules/local/umi_consensus'
 
 workflow UMI_ANALYSIS_SUBWORKFLOW {
     take:
@@ -61,8 +60,8 @@ workflow UMI_ANALYSIS_SUBWORKFLOW {
     outdir
 
     main:
-    ch_versions = Channel.empty()
-    ch_multiqc_files = Channel.empty()
+    ch_versions = channel.empty()
+    ch_multiqc_files = channel.empty()
 
     // Step 1: FastQC on RAW reads (before any processing)
     ch_samples_for_fastqc_raw = samples.map { sample, fastq_1, fastq_2, is_single_end ->
@@ -345,13 +344,58 @@ workflow UMI_ANALYSIS_SUBWORKFLOW {
     )
     ch_versions = ch_versions.mix(UMITOOLS_GROUP.out.versions)
     
-    // Pre-deduplication variant analysis - assess UMI specificity before dedup
-    UMI_VARIANT_ANALYSIS_PREDEDUP (
-        ch_bam_bai,
-        2  // min_reads_per_umi
-    )
-    ch_versions = ch_versions.mix(UMI_VARIANT_ANALYSIS_PREDEDUP.out.versions)
-    ch_multiqc_files = ch_multiqc_files.mix(UMI_VARIANT_ANALYSIS_PREDEDUP.out.multiqc.map { meta, json -> json })
+    // Optional: Build consensus sequences from UMI families
+    if (params.build_consensus) {
+        ch_grouped_bam_bai = UMITOOLS_GROUP.out.bam
+            .join(SAMTOOLS_INDEX.out.bai, by: 0)
+        
+        UMI_CONSENSUS (
+            ch_grouped_bam_bai
+        )
+        ch_versions = ch_versions.mix(UMI_CONSENSUS.out.versions)
+        
+        // Re-align consensus sequences
+        if (params.realign_consensus) {
+            // Convert FASTA to single-end reads for alignment
+            ch_consensus_reads = UMI_CONSENSUS.out.consensus
+                .map { meta, consensus_fasta -> 
+                    [[id: "${meta.id}_consensus", single_end: true], [consensus_fasta]]
+                }
+            
+            BWA_MEM (
+                ch_consensus_reads,
+                ch_bwa_index,
+                ch_fasta,
+                true  // sort
+            )
+            ch_versions = ch_versions.mix(BWA_MEM.out.versions)
+            
+            // Index consensus BAM
+            SAMTOOLS_INDEX (
+                BWA_MEM.out.bam
+            )
+            ch_versions = ch_versions.mix(SAMTOOLS_INDEX.out.versions)
+            
+            // Feature counting on consensus BAM
+            if (gtf) {
+                ch_consensus_bam_gtf = BWA_MEM.out.bam.map { meta, bam -> [meta, bam, gtf] }
+                
+                SUBREAD_FEATURECOUNTS (
+                    ch_consensus_bam_gtf
+                )
+                ch_versions = ch_versions.mix(SUBREAD_FEATURECOUNTS.out.versions)
+                ch_multiqc_files = ch_multiqc_files.mix(SUBREAD_FEATURECOUNTS.out.summary)
+                
+                // Library coverage from consensus
+                LIBRARY_COVERAGE (
+                    SUBREAD_FEATURECOUNTS.out.counts,
+                    ch_fasta
+                )
+                ch_versions = ch_versions.mix(LIBRARY_COVERAGE.out.versions)
+                ch_multiqc_files = ch_multiqc_files.mix(LIBRARY_COVERAGE.out.json.map { meta, json -> json })
+            }
+        }
+    }
     
     // ============================================================
     // UMI Deduplication with umi_tools
@@ -377,18 +421,6 @@ workflow UMI_ANALYSIS_SUBWORKFLOW {
         UMITOOLS_DEDUP.out.bam
     )
     ch_versions = ch_versions.mix(SAMTOOLS_INDEX_DEDUP.out.versions)
-    
-    // Post-deduplication variant analysis - assess deduplication specificity
-    ch_dedup_bam_bai_variant = UMITOOLS_DEDUP.out.bam
-        .join(SAMTOOLS_INDEX_DEDUP.out.bai, by: 0)
-        .map { meta, bam, bai -> [meta, bam, bai] }
-    
-    UMI_VARIANT_ANALYSIS_POSTDEDUP (
-        ch_dedup_bam_bai_variant,
-        2  // min_reads_per_umi
-    )
-    ch_versions = ch_versions.mix(UMI_VARIANT_ANALYSIS_POSTDEDUP.out.versions)
-    ch_multiqc_files = ch_multiqc_files.mix(UMI_VARIANT_ANALYSIS_POSTDEDUP.out.multiqc.map { meta, json -> json })
     
     // Generate reference counts from deduplicated BAM files
     ch_dedup_bam_bai = UMITOOLS_DEDUP.out.bam
