@@ -33,9 +33,9 @@ include { MOSDEPTH } from '../../modules/nf-core/mosdepth/main'
 include { UMITOOLS_DEDUP } from '../../modules/nf-core/umitools/dedup/main'
 
 // Load fgbio modules for consensus sequence building
-include { FGBIO_FASTQTOBAM } from '../../modules/nf-core/fgbio/fastqtobam/main'
 include { BWA_MEM as BWA_MEM_FGBIO } from '../../modules/nf-core/bwa/mem/main'
 include { SAMTOOLS_INDEX as SAMTOOLS_INDEX_FGBIO } from '../../modules/nf-core/samtools/index/main'
+include { ANNOTATE_BAM_WITH_UMIS } from '../../modules/local/annotate_bam_with_umis'
 include { FGBIO_GROUPREADSBYUMI } from '../../modules/nf-core/fgbio/groupreadsbyumi/main'
 include { FGBIO_CALLMOLECULARCONSENSUSREADS } from '../../modules/nf-core/fgbio/callmolecularconsensusreads/main'
 include { SAMTOOLS_FASTQ } from '../../modules/nf-core/samtools/fastq/main'
@@ -54,6 +54,7 @@ include { UMI_QC_HTML_REPORT } from '../../modules/local/umi_qc_html_report'
 include { LIBRARY_COVERAGE } from '../../modules/local/library_coverage'
 include { UMI_VARIANT_ANALYSIS } from '../../modules/local/umi_variant_analysis'
 include { UMI_VARIANT_ANALYSIS as UMI_VARIANT_ANALYSIS_PREDEDUP } from '../../modules/local/umi_variant_analysis'
+include { UMI_VARIANT_ANALYSIS as UMI_VARIANT_ANALYSIS_POSTDEDUP } from '../../modules/local/umi_variant_analysis'
 
 // Note: fgbio modules are not available in nf-core modules yet
 // Using UMI-tools modules for UMI processing
@@ -394,32 +395,33 @@ workflow UMI_ANALYSIS_SUBWORKFLOW {
     // Uses FastqToBam to transfer UMI from read names to RX tags
     // ============================================================
     if (!params.skip_fgbio) {
-        // Step 1: Convert FASTQ to unmapped BAM with UMI in RX tag
-        // This solves the "missing RX tag" error by extracting UMI from read names
-        // Note: nf-core module uses task.ext.args for read structure and other params
-        FGBIO_FASTQTOBAM (
-            UMITOOLS_EXTRACT.out.reads  // FASTQ with UMI in read names
-        )
-        ch_versions = ch_versions.mix(FGBIO_FASTQTOBAM.out.versions)
-        
-        // Step 2: Align unmapped BAM (BWA preserves UMI tags)
+        // Step 1: Align FASTQ normally with BWA
         BWA_MEM_FGBIO (
-            FGBIO_FASTQTOBAM.out.bam,
+            UMITOOLS_EXTRACT.out.reads,  // FASTQ with UMI in read names
             ch_bwa_index,
             ch_fasta,
             true  // sort BAM
         )
         ch_versions = ch_versions.mix(BWA_MEM_FGBIO.out.versions)
         
-        // Step 3: Index aligned BAM
+        // Step 2: Index aligned BAM
         SAMTOOLS_INDEX_FGBIO (
             BWA_MEM_FGBIO.out.bam
         )
         ch_versions = ch_versions.mix(SAMTOOLS_INDEX_FGBIO.out.versions)
         
-        // Step 4: Group reads by UMI
+        // Step 3: Annotate aligned BAM with UMI from read names -> RX tags
+        ch_bam_bai_fgbio = BWA_MEM_FGBIO.out.bam
+            .join(SAMTOOLS_INDEX_FGBIO.out.bai, by: 0)
+        
+        ANNOTATE_BAM_WITH_UMIS (
+            ch_bam_bai_fgbio
+        )
+        ch_versions = ch_versions.mix(ANNOTATE_BAM_WITH_UMIS.out.versions)
+        
+        // Step 4: Group reads by UMI (now has RX tags!)
         FGBIO_GROUPREADSBYUMI (
-            BWA_MEM_FGBIO.out.bam,
+            ANNOTATE_BAM_WITH_UMIS.out.bam,
             params.fgbio_group_strategy ?: 'adjacency'
         )
         ch_versions = ch_versions.mix(FGBIO_GROUPREADSBYUMI.out.versions)
