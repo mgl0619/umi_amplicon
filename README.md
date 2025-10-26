@@ -22,6 +22,12 @@
 - Directional clustering algorithm for accurate duplicate identification
 - Comprehensive deduplication statistics and quality metrics
 
+🧬 **Optional Consensus Sequence Generation**
+- Build consensus sequences from UMI families
+- Uses `umi_tools group` output for accurate family grouping
+- Re-alignment and full analysis of consensus sequences
+- Compare deduplicated vs consensus results
+
 📊 **Comprehensive QC**
 - **Library Coverage** - Coverage metrics with evenness analysis
 - **Interactive Reports** - HTML reports with Plotly visualizations
@@ -99,11 +105,22 @@ The umi-amplicon pipeline performs the following steps:
 
 9. **UMI Grouping** - Inspect UMI groups before deduplication:
    - Groups reads by UMI and genomic position using `umi_tools group`
-   - Outputs grouped BAM file with group tags
+   - Outputs grouped BAM file with group tags (UG tag = group ID)
    - Generates groups.tsv file showing UMI groupings
    - **For inspection and QC purposes** - helps understand UMI clustering
 
-10. **UMI Deduplication** - Remove PCR duplicates using UMI information:
+10. **Consensus Sequence Generation** (Optional, `--build_consensus`):
+   - Builds consensus sequences from each UMI family
+   - Uses `umi_tools group` output (UG tags) for accurate grouping
+   - Majority-voting consensus calling with quality-aware base selection
+   - Outputs FASTA files with consensus sequences
+   - **Optional re-alignment** (`--realign_consensus`):
+     - Re-aligns consensus sequences to reference
+     - Performs feature counting on consensus BAM
+     - Generates library coverage analysis for consensus
+     - Enables comparison: deduplicated vs consensus results
+
+11. **UMI Deduplication** - Remove PCR duplicates using UMI information:
    - Performed on aligned BAM files using `umi_tools dedup`
    - Uses genomic coordinates + UMI for accurate deduplication
    - Directional network-based deduplication method
@@ -111,7 +128,7 @@ The umi-amplicon pipeline performs the following steps:
    - Generates comprehensive deduplication statistics
    - Produces deduplicated BAM files for downstream analysis
 
-11. **Post-Deduplication UMI QC** - Deduplication performance metrics:
+12. **Post-Deduplication UMI QC** - Deduplication performance metrics:
    - UMI family statistics (count, sizes, distribution)
    - Edit distance analysis between UMIs (error correction/clustering)
    - Deduplication rate and efficiency
@@ -120,13 +137,13 @@ The umi-amplicon pipeline performs the following steps:
    - Mean/median edit distance
    - Error correction rate
 
-12. **Feature Counting** - Count reads per amplicon/feature:
+13. **Feature Counting** - Count reads per amplicon/feature:
    - Uses `featureCounts` from Subread package
    - Counts deduplicated reads mapping to each feature
    - Generates count matrix for gene expression analysis
    - Requires GTF annotation file (`--gtf`)
 
-13. **Library Coverage Analysis** - Comprehensive coverage metrics:
+14. **Library Coverage Analysis** - Comprehensive coverage metrics:
    - Coverage analysis from deduplicated reads
    - Calculates library coverage (% of reference sequences detected)
    - **Evenness metrics**:
@@ -140,7 +157,7 @@ The umi-amplicon pipeline performs the following steps:
      - Summary statistics
    - Outputs: text report, JSON for MultiQC, PNG plots
 
-16. **UMI QC HTML Report** - Comprehensive interactive report:
+15. **UMI QC HTML Report** - Comprehensive interactive report:
    - **Single consolidated report** with pre- and post-dedup metrics
    - Interactive Plotly visualizations
    - Family size distribution charts
@@ -149,7 +166,7 @@ The umi-amplicon pipeline performs the following steps:
    - Automated quality assessment
    - Output: `umi_qc_postdedup/reports/sample.umi_postdedup_report.html`
 
-17. **MultiQC Report** - Comprehensive HTML report aggregating:
+16. **MultiQC Report** - Comprehensive HTML report aggregating:
    - All QC metrics from each step
    - Interactive visualizations
    - UMI diversity plots
@@ -196,6 +213,35 @@ nextflow run umi-amplicon \
     --umi_length 12
     -profile conda
 ```
+
+### Optional: Consensus Sequence Generation
+
+To build consensus sequences from UMI families and perform full analysis:
+
+```bash
+nextflow run umi-amplicon \
+    --input samplesheet.csv \
+    --fasta reference.fa \
+    --gtf genes.gtf \
+    --build_consensus \
+    --realign_consensus \
+    --min_umi_family_size 3 \
+    --consensus_call_fraction 0.8 \
+    --outdir results/ \
+    -profile docker
+```
+
+**Parameters:**
+- `--build_consensus` - Enable consensus generation
+- `--realign_consensus` - Re-align consensus and perform full analysis (default: true)
+- `--min_umi_family_size` - Minimum reads per UMI family (default: 2)
+- `--consensus_call_fraction` - Minimum fraction for consensus base (default: 0.6)
+
+**Outputs:**
+- `consensus/*.consensus.fasta` - Consensus sequences
+- `consensus/*_consensus.bam` - Re-aligned consensus BAM
+- `counts/gene_level/*_consensus_counts.txt` - Feature counts from consensus
+- `library_coverage/*_consensus_*` - Coverage analysis from consensus
 
 ## Citation
 
