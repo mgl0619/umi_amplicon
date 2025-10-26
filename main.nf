@@ -146,20 +146,8 @@ if (!file(params.outdir).canWrite()) {
     exit 1
 }
 
-// Set default parameters
-params.umi_length = params.umi_length ?: 12
-params.umi_pattern = params.umi_pattern ?: "NNNNNNNNNNNN"
-params.umi_method = params.umi_method ?: "directional"
-params.umi_quality_filter_threshold = params.umi_quality_filter_threshold ?: 15
-params.umi_collision_rate_threshold = params.umi_collision_rate_threshold ?: 0.1
-params.umi_diversity_threshold = params.umi_diversity_threshold ?: 1000
-params.group_strategy = params.group_strategy ?: "paired"
-params.consensus_strategy = params.consensus_strategy ?: "paired"
-params.min_reads = params.min_reads ?: 1
-params.min_fraction = params.min_fraction ?: 0.5
-params.error_rate_pre_umi = params.error_rate_pre_umi ?: 0.01
-params.max_edit_distance = params.max_edit_distance ?: 1
-params.min_base_quality = params.min_base_quality ?: 20
+// Note: Default parameters are set in nextflow.config
+// No need to set defaults here as they're already defined in config
 
 // Print pipeline information
 log.info nfcoreHeader()
@@ -250,11 +238,6 @@ workflow {
         params.umi_quality_filter_threshold,
         params.umi_collision_rate_threshold,
         params.umi_diversity_threshold,
-        params.group_strategy,
-        params.consensus_strategy,
-        params.min_reads,
-        params.min_fraction,
-        params.error_rate_pre_umi,
         params.max_edit_distance,
         params.min_base_quality,
         params.outdir

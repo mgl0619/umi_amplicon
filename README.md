@@ -6,9 +6,41 @@
 
 ## Introduction
 
-**umi-amplicon** is a bioinformatics best-practice analysis pipeline for UMI-tagged amplicon sequencing data.
+**umi-amplicon** is a comprehensive bioinformatics pipeline for UMI-tagged amplicon sequencing analysis with advanced quality control and flexible deduplication strategies.
 
-The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool to run tasks across multiple compute infrastructures in a very portable manner. It uses Docker containers and conda environments making installation trivial and results highly reproducible. The [Nextflow DSL2](https://www.nextflow.io/docs/latest/dsl2.html) implementation of this pipeline uses one container per process which makes it much easier to maintain and update software dependencies. Where possible, these processes have been submitted to and installed from [nf-core/modules](https://github.com/nf-core/modules)!
+### What's New in This Version
+
+🔬 **Advanced UMI Variant Analysis**
+- Pre- and post-deduplication multi-variant UMI detection
+- Automated classification of sequencing errors vs UMI collisions
+- Specificity metrics to validate deduplication effectiveness
+
+📊 **Enhanced Quality Control**
+- Library coverage analysis with evenness metrics
+- Interactive HTML reports with Plotly visualizations
+- Comprehensive MultiQC integration
+
+### Key Features
+
+✨ **UMI Deduplication with umi_tools**
+- Network-based deduplication using genomic coordinates and UMI sequences
+- Directional clustering algorithm for accurate duplicate identification
+- Comprehensive deduplication statistics and quality metrics
+
+🔬 **Advanced UMI Analysis**
+- **Variant Analysis** - Assess multi-variant UMIs (pre & post-dedup)
+- **Specificity Metrics** - Validate deduplication effectiveness
+- **Error Detection** - Identify sequencing errors vs UMI collisions
+
+📊 **Comprehensive QC**
+- **Library Coverage** - Coverage metrics with evenness analysis
+- **Interactive Reports** - HTML reports with Plotly visualizations
+- **MultiQC Integration** - Aggregated metrics from all steps
+
+🛠️ **Production-Ready**
+- Built with [Nextflow DSL2](https://www.nextflow.io/docs/latest/dsl2.html)
+- Docker/Conda support for reproducibility
+- Uses [nf-core modules](https://github.com/nf-core/modules) where possible
 
 ## TODO
    build nf-core test & ensure CI ready 
@@ -53,7 +85,7 @@ The umi-amplicon pipeline performs the following steps:
    - Full 5' and 3' end trimming (UMIs now in headers)
    - Adapter trimming
    - Quality filtering
-   - Read merging (for paired-end amplicon data, not implemented yet TODO: merge if high-merging rate)
+   - **Maintains paired-end structure** (no merging for optimal UMI deduplication)
    - Final quality statistics
 
 6. **FastQC** - Quality check after full processing:
@@ -80,14 +112,29 @@ The umi-amplicon pipeline performs the following steps:
    - Generates groups.tsv file showing UMI groupings
    - **For inspection and QC purposes** - helps understand UMI clustering
 
-10. **UMI Deduplication** - Remove PCR duplicates using UMI + genomic position:
+10. **Pre-Deduplication Variant Analysis** - Assess UMI specificity:
+   - Analyzes multi-variant UMIs (same UMI, different sequences)
+   - Classifies variants as:
+     - Likely sequencing errors (major variant >90%)
+     - Likely UMI collisions (different genomic positions)
+     - Ambiguous cases
+   - Calculates baseline specificity metrics
+
+11. **UMI Deduplication** - Remove PCR duplicates using UMI information:
    - Performed on aligned BAM files using `umi_tools dedup`
    - Uses genomic coordinates + UMI for accurate deduplication
    - Directional network-based deduplication method
-   - Error correction and UMI family grouping
-   - Outputs deduplicated BAM files
+   - Selects best read from each UMI family
+   - Generates comprehensive deduplication statistics
+   - Produces deduplicated BAM files for downstream analysis
 
-11. **Post-Deduplication UMI QC** - Deduplication performance metrics:
+12. **Post-Deduplication Variant Analysis** - Assess deduplication effectiveness:
+   - Re-analyzes multi-variant UMIs after deduplication
+   - Compares pre/post-dedup specificity
+   - Validates deduplication performance
+   - Identifies remaining problematic UMIs
+
+13. **Post-Deduplication UMI QC** - Deduplication performance metrics:
    - UMI family statistics (count, sizes, distribution)
    - Edit distance analysis between UMIs (error correction/clustering)
    - Deduplication rate and efficiency
@@ -96,12 +143,14 @@ The umi-amplicon pipeline performs the following steps:
    - Mean/median edit distance
    - Error correction rate
 
-12. **Feature Counting** - Count reads per amplicon/feature:
+14. **Feature Counting** - Count reads per amplicon/feature:
    - Uses `featureCounts` from Subread package
    - Counts deduplicated reads mapping to each feature
-   - Generates count matrix for downstream analysis
+   - Generates count matrix for gene expression analysis
+   - Requires GTF annotation file (`--gtf`)
 
-13. **Library Coverage Analysis** - Comprehensive coverage metrics:
+15. **Library Coverage Analysis** - Comprehensive coverage metrics:
+   - Coverage analysis from deduplicated reads
    - Calculates library coverage (% of reference sequences detected)
    - **Evenness metrics**:
      - Shannon entropy - diversity measure
@@ -114,7 +163,7 @@ The umi-amplicon pipeline performs the following steps:
      - Summary statistics
    - Outputs: text report, JSON for MultiQC, PNG plots
 
-14. **UMI QC HTML Report** - Comprehensive interactive report:
+16. **UMI QC HTML Report** - Comprehensive interactive report:
    - **Single consolidated report** with pre- and post-dedup metrics
    - Interactive Plotly visualizations
    - Family size distribution charts
@@ -123,13 +172,14 @@ The umi-amplicon pipeline performs the following steps:
    - Automated quality assessment
    - Output: `umi_qc_postdedup/reports/sample.umi_postdedup_report.html`
 
-15. **MultiQC Report** - Comprehensive HTML report aggregating:
+17. **MultiQC Report** - Comprehensive HTML report aggregating:
    - All QC metrics from each step
    - Interactive visualizations
    - UMI diversity plots
-   - Deduplication statistics
+   - Deduplication/consensus statistics
    - Alignment summaries
    - Library coverage metrics
+   - Variant analysis metrics
 
 ## Quick Start
 
@@ -193,18 +243,31 @@ graph TD
     D --> F[FASTP - Full Trimming]
     F --> G[Alignment - BWA-MEM]
     G --> H[UMI Grouping]
-    H --> I[UMI Deduplication]
-    I --> J[Post-Dedup UMI QC]
-    J --> K[Feature Counting]
-    K --> L[Library Coverage Analysis]
-    E --> M[UMI QC HTML Report]
-    J --> M[UMI QC HTML Report]
-    B --> N[MultiQC Report]
-    D --> N[MultiQC Report]
-    F --> N[MultiQC Report]
-    K --> N[MultiQC Report]
-    L --> N[MultiQC Report]
-    N --> O[Final Results]
+    H --> I[Pre-Dedup Variant Analysis]
+    
+    I --> K[umi_tools dedup]
+    K --> K1[Select Best Read per UMI]
+    K1 --> N[Post-Dedup Variant Analysis]
+    
+    N --> O[Post-Dedup UMI QC]
+    O --> P[Feature Counting]
+    P --> Q[Library Coverage Analysis]
+    
+    E --> R[UMI QC HTML Report]
+    O --> R
+    
+    B --> S[MultiQC Report]
+    D --> S
+    F --> S
+    I --> S
+    N --> S
+    P --> S
+    Q --> S
+    
+    S --> T[Final Results]
+    
+    style K fill:#90EE90
+    style K1 fill:#90EE90
 ```
 
 ## UMI Analysis Features
@@ -260,6 +323,16 @@ The pipeline produces the following outputs:
   - `*_grouped.tsv` - TSV file showing which reads belong to which UMI groups
   - `*_grouped.log` - Grouping process log
   
+- **UMI Variant Analysis** (Pre & Post-Dedup):
+  - `*_umi_variant_analysis.txt` - Detailed report with multi-variant UMIs
+  - `*_umi_variant_analysis_mqc.json` - MultiQC integration
+  - `*_umi_variant_details.json` - Full data for further analysis
+  - **Key Metrics**:
+    - UMI Specificity (%)
+    - Multi-variant Rate (%)
+    - Error Rate (%)
+    - Collision Rate (%)
+
 - **Library Coverage Analysis**:
   - `*_library_coverage.txt` - Text report with coverage and evenness metrics
   - `*_library_coverage.json` - JSON format for MultiQC integration
@@ -277,12 +350,7 @@ nextflow run umi-amplicon \
     --input samplesheet.csv \
     --fasta <FASTA> \
     --outdir results/ \
-    --umi_length 12 \
-    --umi_pattern NNNNNNNNNNNN \
-    --umi_method directional \
-    --umi_quality_threshold 15 \
-    --umi_collision_rate_threshold 0.05 \
-    --umi_diversity_threshold 2000
+    -profile docker
 ```
 
 ### Custom Configuration
@@ -295,17 +363,92 @@ nextflow run umi-amplicon \
     -c custom.config
 ```
 
+## Parameters
+
+### Required Parameters
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `--input` | Path to samplesheet CSV file | - |
+| `--fasta` | Path to reference genome FASTA | - |
+
+### UMI Parameters
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `--umi_length` | Length of UMI sequence | `12` |
+| `--umi_pattern` | UMI pattern (N = random base) | `NNNNNNNNNNNN` |
+| `--umi_method` | Deduplication method | `directional` |
+| `--umi_quality_filter_threshold` | Min quality for UMI bases | `15` |
+| `--umi_collision_rate_threshold` | Max acceptable collision rate | `0.1` |
+| `--umi_diversity_threshold` | Min unique UMIs expected | `1000` |
+
+### Read Processing Parameters
+| Parameter | Description | Default |
+|-----------|-------------|---------|  
+| `--merge_pairs` | Merge paired-end reads after trimming | `false` |
+
+**Note**: Merging is **not recommended** for UMI deduplication as paired-end structure provides more information for accurate deduplication. Use merging only for specific use cases like very short amplicons.
+
+### Optional Parameters
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `--gtf` | GTF annotation file for feature counting | - |
+| `--outdir` | Output directory | `./results` |
+| `--skip_mosdepth` | Skip coverage analysis | `false` |
+
+## Quick Reference
+
+### Common Commands
+
+**Basic run:**
+```bash
+nextflow run umi-amplicon --input samples.csv --fasta ref.fa -profile docker
+```
+
+**Resume a failed run:**
+```bash
+nextflow run umi-amplicon --input samples.csv --fasta ref.fa -profile docker -resume
+```
+
+**With gene annotation:**
+```bash
+nextflow run umi-amplicon --input samples.csv --fasta ref.fa --gtf genes.gtf -profile docker
+```
+
+### Key Output Files
+
+| File | Description |
+|------|-------------|
+| `umitools/dedup/*.bam` | Deduplicated BAM files |
+| `umi_qc_metrics/*_report.html` | Interactive UMI QC reports |
+| `umi_variant_analysis/*_prededup.txt` | Pre-dedup variant analysis |
+| `umi_variant_analysis/*_postdedup.txt` | Post-dedup variant analysis |
+| `library_coverage/*.txt` | Coverage and evenness metrics |
+| `multiqc/multiqc_report.html` | Comprehensive QC report |
+
 ## Troubleshooting
 
 ### Common Issues
-1. **Memory Issues**: Increase memory allocation for large datasets
-2. **Quality Issues**: Adjust quality thresholds for your data
-3. **Pattern Issues**: Verify UMI patterns match your experimental design
+
+**Memory Issues**
+- Increase memory allocation for large datasets in your config file
+- Adjust `max_memory` parameter
+
+**Quality Issues**
+- Check `--umi_quality_filter_threshold` settings
+- Review FastQC reports for data quality
+
+**Pattern Issues**
+- Verify `--umi_pattern` matches your experimental design
+- Ensure `--umi_length` matches the pattern
+
+**Performance**
+- Enable `-resume` to restart from last successful step
+- Consider increasing CPU/memory resources in config
 
 ## Acknowledgments
 
 - The nf-core community for their support and feedback
-- The UMI-tools developers for their excellent software
+- UMI-tools developers for the deduplication framework
 - The Nextflow community for their continuous improvements
 - All contributors who have helped improve this pipeline
 

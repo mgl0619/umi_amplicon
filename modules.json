@@ -30,26 +30,6 @@
             "git_sha": "41dfa3f7c0ffabb96a6a813fe321c6d1cc5b6e46",
             "installed_by": ["modules"]
           },
-          "fgbio/callduplexconsensusreads": {
-            "branch": "master",
-            "git_sha": "41dfa3f7c0ffabb96a6a813fe321c6d1cc5b6e46",
-            "installed_by": ["modules"]
-          },
-          "fgbio/callmolecularconsensusreads": {
-            "branch": "master",
-            "git_sha": "41dfa3f7c0ffabb96a6a813fe321c6d1cc5b6e46",
-            "installed_by": ["modules"]
-          },
-          "fgbio/fastqtobam": {
-            "branch": "master",
-            "git_sha": "16af45709c1eca0aa9a8378ed790f15696dd7f1e",
-            "installed_by": ["modules"]
-          },
-          "fgbio/groupreadsbyumi": {
-            "branch": "master",
-            "git_sha": "41dfa3f7c0ffabb96a6a813fe321c6d1cc5b6e46",
-            "installed_by": ["modules"]
-          },
           "mosdepth": {
             "branch": "master",
             "git_sha": "2cd32e2448fb70ed1e1ab3143cee7dbdbede7271",

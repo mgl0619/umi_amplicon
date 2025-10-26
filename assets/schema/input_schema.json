@@ -13,12 +13,23 @@
         "outdir": {
             "type": "string",
             "format": "directory-path",
-            "description": "The output directory where the results will be saved"
+            "description": "The output directory where the results will be saved",
+            "default": "./results"
         },
-        "umitools_path": {
+        "fasta": {
             "type": "string",
-            "default": "umitools",
-            "description": "Path to UMI-tools installation"
+            "format": "file-path",
+            "description": "Path to reference genome FASTA file"
+        },
+        "bwa_index": {
+            "type": "string",
+            "format": "directory-path",
+            "description": "Path to BWA index directory (optional, will be generated if not provided)"
+        },
+        "gtf": {
+            "type": "string",
+            "format": "file-path",
+            "description": "Path to GTF annotation file for feature counting (optional)"
         },
         "umi_length": {
             "type": "integer",
@@ -32,14 +43,14 @@
         },
         "umi_method": {
             "type": "string",
-            "enum": ["directional", "unique"],
+            "enum": ["directional", "unique", "cluster", "adjacency"],
             "default": "directional",
-            "description": "UMI extraction method"
+            "description": "UMI deduplication method"
         },
-        "umi_quality_threshold": {
+        "umi_quality_filter_threshold": {
             "type": "integer",
-            "default": 10,
-            "description": "Minimum quality score for UMI bases"
+            "default": 15,
+            "description": "Quality filter threshold for UMI bases"
         },
         "umi_collision_rate_threshold": {
             "type": "number",
@@ -49,66 +60,28 @@
         "umi_diversity_threshold": {
             "type": "integer",
             "default": 1000,
-            "description": "Minimum UMI diversity"
-        },
-        "umi_tool": {
-            "type": "string",
-            "enum": ["umitools", "fgbio"],
-            "default": "umitools",
-            "description": "UMI processing tool"
-        },
-        "group_strategy": {
-            "type": "string",
-            "enum": ["paired", "single"],
-            "default": "paired",
-            "description": "Grouping strategy for fgbio"
-        },
-        "consensus_strategy": {
-            "type": "string",
-            "enum": ["paired", "single"],
-            "default": "paired",
-            "description": "Consensus strategy for fgbio"
-        },
-        "min_reads": {
-            "type": "integer",
-            "default": 1,
-            "description": "Minimum reads per UMI group"
-        },
-        "min_fraction": {
-            "type": "number",
-            "default": 0.5,
-            "description": "Minimum fraction for consensus"
-        },
-        "error_rate_pre_umi": {
-            "type": "number",
-            "default": 0.01,
-            "description": "Error rate pre-UMI for fgbio"
+            "description": "Minimum expected UMI diversity"
         },
         "max_edit_distance": {
             "type": "integer",
             "default": 1,
-            "description": "Maximum edit distance for filtering"
+            "description": "Maximum edit distance for UMI clustering"
         },
         "min_base_quality": {
             "type": "integer",
             "default": 20,
             "description": "Minimum base quality for filtering"
         },
-        "skip_umi_qc": {
+        "merge_pairs": {
             "type": "boolean",
             "default": false,
-            "description": "Skip UMI quality control metrics"
+            "description": "Merge paired-end reads after trimming (not recommended for UMI dedup)"
         },
-        "skip_umi_analysis": {
+        "skip_mosdepth": {
             "type": "boolean",
             "default": false,
-            "description": "Skip UMI analysis pipeline"
-        },
-        "skip_report": {
-            "type": "boolean",
-            "default": false,
-            "description": "Skip HTML report generation"
+            "description": "Skip mosdepth coverage analysis"
         }
     },
-    "required": ["input", "outdir"]
+    "required": ["input", "fasta"]
 }
