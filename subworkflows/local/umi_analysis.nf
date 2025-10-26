@@ -9,25 +9,21 @@
 // Load nf-core modules
 include { FASTP as FASTP_QC } from '../../modules/nf-core/fastp/main'
 include { FASTP as FASTP_TRIM } from '../../modules/nf-core/fastp/main'
-include { FASTQC as FASTQC_RAW } from '../../modules/nf-core/fastqc/main'
 include { FASTQC as FASTQC_FASTP_QC } from '../../modules/nf-core/fastqc/main'
 include { FASTQC as FASTQC_FASTP_TRIM } from '../../modules/nf-core/fastqc/main'
 include { MULTIQC } from '../../modules/nf-core/multiqc/main'
 include { UMITOOLS_EXTRACT } from '../../modules/nf-core/umitools/extract/main'
 include { BWA_MEM } from '../../modules/nf-core/bwa/mem/main'
-include { BWA_MEM as BWA_MEM_CONSENSUS } from '../../modules/nf-core/bwa/mem/main'
 include { BWA_INDEX } from '../../modules/nf-core/bwa/index/main'
 include { SUBREAD_FEATURECOUNTS } from '../../modules/nf-core/subread/featurecounts/main'
 
 // Load nf-core subworkflows and modules for BAM processing
 include { SAMTOOLS_INDEX } from '../../modules/nf-core/samtools/index/main'
 include { SAMTOOLS_INDEX as SAMTOOLS_INDEX_DEDUP } from '../../modules/nf-core/samtools/index/main'
-include { SAMTOOLS_INDEX as SAMTOOLS_INDEX_CONSENSUS } from '../../modules/nf-core/samtools/index/main'
 include { SAMTOOLS_STATS } from '../../modules/nf-core/samtools/stats/main'
 include { SAMTOOLS_FLAGSTAT } from '../../modules/nf-core/samtools/flagstat/main'
 include { SAMTOOLS_IDXSTATS } from '../../modules/nf-core/samtools/idxstats/main'
 include { SAMTOOLS_IDXSTATS as SAMTOOLS_IDXSTATS_DEDUP } from '../../modules/nf-core/samtools/idxstats/main'
-include { SAMTOOLS_FASTQ } from '../../modules/nf-core/samtools/fastq/main'
 include { PICARD_COLLECTALIGNMENTSUMMARYMETRICS } from '../../modules/nf-core/picard/collectalignmentsummarymetrics/main'
 include { PICARD_COLLECTINSERTSIZEMETRICS } from '../../modules/nf-core/picard/collectinsertsizemetrics/main'
 include { MOSDEPTH } from '../../modules/nf-core/mosdepth/main'
@@ -36,8 +32,15 @@ include { MOSDEPTH } from '../../modules/nf-core/mosdepth/main'
 include { UMITOOLS_DEDUP } from '../../modules/nf-core/umitools/dedup/main'
 
 // Load fgbio modules for consensus sequence building
+include { FGBIO_FASTQTOBAM } from '../../modules/nf-core/fgbio/fastqtobam/main'
+include { BWA_MEM as BWA_MEM_FGBIO } from '../../modules/nf-core/bwa/mem/main'
+include { SAMTOOLS_INDEX as SAMTOOLS_INDEX_FGBIO } from '../../modules/nf-core/samtools/index/main'
 include { FGBIO_GROUPREADSBYUMI } from '../../modules/nf-core/fgbio/groupreadsbyumi/main'
 include { FGBIO_CALLMOLECULARCONSENSUSREADS } from '../../modules/nf-core/fgbio/callmolecularconsensusreads/main'
+include { SAMTOOLS_FASTQ } from '../../modules/nf-core/samtools/fastq/main'
+include { BWA_MEM as BWA_MEM_CONSENSUS } from '../../modules/nf-core/bwa/mem/main'
+include { SAMTOOLS_INDEX as SAMTOOLS_INDEX_CONSENSUS } from '../../modules/nf-core/samtools/index/main'
+include { UMI_VARIANT_ANALYSIS as UMI_VARIANT_ANALYSIS_CONSENSUS } from '../../modules/local/umi_variant_analysis'
 
 // Load UMI grouping module
 include { UMITOOLS_GROUP } from '../../modules/nf-core/umitools/group/main'
@@ -48,9 +51,8 @@ include { UMI_QC_METRICS_POSTUMIEXTRACT } from '../../modules/local/umi_qc_metri
 include { UMI_QC_METRICS_POSTDEDUP } from '../../modules/local/umi_qc_metrics_postdedup'
 include { UMI_QC_HTML_REPORT } from '../../modules/local/umi_qc_html_report'
 include { LIBRARY_COVERAGE } from '../../modules/local/library_coverage'
+include { UMI_VARIANT_ANALYSIS } from '../../modules/local/umi_variant_analysis'
 include { UMI_VARIANT_ANALYSIS as UMI_VARIANT_ANALYSIS_PREDEDUP } from '../../modules/local/umi_variant_analysis'
-include { UMI_VARIANT_ANALYSIS as UMI_VARIANT_ANALYSIS_POSTDEDUP } from '../../modules/local/umi_variant_analysis'
-include { UMI_VARIANT_ANALYSIS as UMI_VARIANT_ANALYSIS_CONSENSUS } from '../../modules/local/umi_variant_analysis'
 
 // Note: fgbio modules are not available in nf-core modules yet
 // Using UMI-tools modules for UMI processing
@@ -388,17 +390,41 @@ workflow UMI_ANALYSIS_SUBWORKFLOW {
     
     // ============================================================
     // fgbio Consensus Workflow (OPTIONAL - runs by default)
+    // Uses FastqToBam to transfer UMI from read names to RX tags
     // ============================================================
     if (!params.skip_fgbio) {
-        // Step 1: Group reads by UMI
+        // Step 1: Convert FASTQ to unmapped BAM with UMI in RX tag
+        // This solves the "missing RX tag" error by extracting UMI from read names
+        // Note: nf-core module uses task.ext.args for read structure and other params
+        FGBIO_FASTQTOBAM (
+            UMITOOLS_EXTRACT.out.reads  // FASTQ with UMI in read names
+        )
+        ch_versions = ch_versions.mix(FGBIO_FASTQTOBAM.out.versions)
+        
+        // Step 2: Align unmapped BAM (BWA preserves UMI tags)
+        BWA_MEM_FGBIO (
+            FGBIO_FASTQTOBAM.out.bam,
+            ch_bwa_index,
+            ch_fasta,
+            true  // sort BAM
+        )
+        ch_versions = ch_versions.mix(BWA_MEM_FGBIO.out.versions)
+        
+        // Step 3: Index aligned BAM
+        SAMTOOLS_INDEX_FGBIO (
+            BWA_MEM_FGBIO.out.bam
+        )
+        ch_versions = ch_versions.mix(SAMTOOLS_INDEX_FGBIO.out.versions)
+        
+        // Step 4: Group reads by UMI
         FGBIO_GROUPREADSBYUMI (
-            BWA_MEM.out.bam,
+            BWA_MEM_FGBIO.out.bam,
             params.fgbio_group_strategy ?: 'adjacency'
         )
         ch_versions = ch_versions.mix(FGBIO_GROUPREADSBYUMI.out.versions)
         ch_multiqc_files = ch_multiqc_files.mix(FGBIO_GROUPREADSBYUMI.out.histogram.map { meta, file -> file })
         
-        // Step 2: Call consensus sequences (output is unmapped BAM)
+        // Step 5: Call consensus sequences
         FGBIO_CALLMOLECULARCONSENSUSREADS (
             FGBIO_GROUPREADSBYUMI.out.bam,
             params.fgbio_min_reads ?: 1,
@@ -406,17 +432,15 @@ workflow UMI_ANALYSIS_SUBWORKFLOW {
         )
         ch_versions = ch_versions.mix(FGBIO_CALLMOLECULARCONSENSUSREADS.out.versions)
         
-        // Step 3: Convert unmapped consensus BAM to FASTQ
+        // Step 6: Convert consensus BAM to FASTQ
         SAMTOOLS_FASTQ (
             FGBIO_CALLMOLECULARCONSENSUSREADS.out.bam,
             false  // interleave
         )
         ch_versions = ch_versions.mix(SAMTOOLS_FASTQ.out.versions)
         
-        // Step 4: Re-align consensus sequences with BWA-MEM
-        // Note: Consensus reads are always treated as single-end after fgbio processing
+        // Step 7: Re-align consensus sequences
         ch_consensus_fastq = SAMTOOLS_FASTQ.out.fastq.map { meta, fastq ->
-            // fgbio consensus output is single-end, update meta accordingly
             [[id: meta.id, single_end: true], fastq]
         }
         
@@ -428,16 +452,15 @@ workflow UMI_ANALYSIS_SUBWORKFLOW {
         )
         ch_versions = ch_versions.mix(BWA_MEM_CONSENSUS.out.versions)
         
-        // Step 5: Index consensus BAM
+        // Step 8: Index consensus BAM
         SAMTOOLS_INDEX_CONSENSUS (
             BWA_MEM_CONSENSUS.out.bam
         )
         ch_versions = ch_versions.mix(SAMTOOLS_INDEX_CONSENSUS.out.versions)
         
-        // Step 6: Variant analysis on consensus BAM
+        // Step 9: Variant analysis on consensus
         ch_consensus_bam_bai = BWA_MEM_CONSENSUS.out.bam
             .join(SAMTOOLS_INDEX_CONSENSUS.out.bai, by: 0)
-            .map { meta, bam, bai -> [meta, bam, bai] }
         
         UMI_VARIANT_ANALYSIS_CONSENSUS (
             ch_consensus_bam_bai,
@@ -446,24 +469,7 @@ workflow UMI_ANALYSIS_SUBWORKFLOW {
         ch_versions = ch_versions.mix(UMI_VARIANT_ANALYSIS_CONSENSUS.out.versions)
         ch_multiqc_files = ch_multiqc_files.mix(UMI_VARIANT_ANALYSIS_CONSENSUS.out.multiqc.map { meta, json -> json })
         
-        // Step 7: Feature counting on consensus BAM (if GTF provided)
-        if (gtf) {
-            SUBREAD_FEATURECOUNTS (
-                ch_consensus_bam_bai.map { meta, bam, bai -> [meta, bam] },
-                gtf
-            )
-            ch_versions = ch_versions.mix(SUBREAD_FEATURECOUNTS.out.versions)
-            ch_multiqc_files = ch_multiqc_files.mix(SUBREAD_FEATURECOUNTS.out.summary.map { meta, file -> file })
-            
-            // Step 8: Library coverage analysis on consensus counts
-            LIBRARY_COVERAGE (
-                SUBREAD_FEATURECOUNTS.out.counts
-            )
-            ch_versions = ch_versions.mix(LIBRARY_COVERAGE.out.versions)
-            ch_multiqc_files = ch_multiqc_files.mix(LIBRARY_COVERAGE.out.json.map { meta, file -> file })
-        }
-        
-        log.info "fgbio consensus sequences successfully re-aligned and analyzed"
+        log.info "fgbio consensus sequences successfully generated and analyzed"
     }
     
     // Log workflow configuration

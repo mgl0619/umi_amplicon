@@ -3,6 +3,29 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.2] - 2025-10-25
+
+### Fixed
+
+- **fgbio RX Tag Error**: Resolved "missing raw UMI tag 'RX'" error in fgbio GroupReadsByUmi
+  - Integrated `fgbio FastqToBam` module to properly transfer UMI from read names to RX tags
+  - Follows nf-core/fastquorum best practices for UMI handling
+  - UMI information now correctly flows from umi_tools extract → FastqToBam → BWA alignment → fgbio consensus
+  - Uses nf-core fgbio/fastqtobam module instead of custom implementation
+
+### Changed
+
+- **fgbio Workflow**: Updated consensus workflow to use FastqToBam before alignment
+  - FASTQ with UMI in read names → unmapped BAM with RX tags → aligned BAM → consensus
+  - Configuration added to `nextflow.config` for read structure and UMI extraction parameters
+  - Removed custom local module in favor of official nf-core module
+
+### Documentation
+
+- Updated README with detailed fgbio workflow steps including FastqToBam
+- Added troubleshooting section documenting the RX tag fix
+- Clarified that the fix follows nf-core/fastquorum best practices
+
 ## [1.0.1] - 2025-10-15
 
 ### Changed

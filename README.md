@@ -136,11 +136,15 @@ The umi-amplicon pipeline performs the following steps:
    - Fast and efficient for high-quality data
    
    **Workflow B: fgbio consensus (runs by default, skip with `--skip_fgbio`)**
-   - Groups reads by UMI using `fgbio GroupReadsByUmi`
-   - Builds consensus sequences using `fgbio CallMolecularConsensusReads`
-   - Converts consensus BAM to FASTQ using `samtools fastq`
-   - Re-aligns consensus sequences with `BWA-MEM`
-   - Indexes consensus BAM for downstream analysis
+   - **UMI Transfer**: Converts FASTQ to unmapped BAM with `fgbio FastqToBam`
+     - Extracts UMI from read names (added by umi_tools extract)
+     - Stores UMI in RX tag (required by fgbio)
+     - Follows nf-core/fastquorum best practices
+   - **Initial Alignment**: Aligns unmapped BAM with BWA-MEM (preserves RX tags)
+   - **UMI Grouping**: Groups reads by UMI using `fgbio GroupReadsByUmi`
+   - **Consensus Calling**: Builds consensus sequences using `fgbio CallMolecularConsensusReads`
+   - **Re-alignment**: Converts consensus BAM to FASTQ and re-aligns with BWA-MEM
+   - **QC & Analysis**: Indexes consensus BAM for downstream analysis
    - Leverages multiple reads for error correction
    - Higher accuracy but slower
    
@@ -561,6 +565,12 @@ nextflow run umi-amplicon --input samples.csv --fasta ref.fa -profile docker -re
 ## Troubleshooting
 
 ### Common Issues
+
+**fgbio "Missing RX tag" Error**
+- **Fixed in current version**: Pipeline now uses `fgbio FastqToBam` to properly transfer UMI from read names to RX tags
+- The workflow automatically converts FASTQ with UMI in read names (from umi_tools) to BAM with RX tags (for fgbio)
+- This follows nf-core/fastquorum best practices
+- No user action required - the fix is built into the pipeline
 
 **Memory Issues**
 - Increase memory allocation for large datasets
